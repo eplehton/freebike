@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Freebike</title>
+	<meta charset="UTF-8">
+	
+	<link type="text/css" rel="stylesheet" href="dangers.css" />
+	
+	<script type="text/javascript" src="js/jquery-2.1.4.js"></script>
+	<script type="text/javascript" src="js/Dexie.min.js"></script>
+    
+	<script type="text/javascript" src="js/dangers.js"></script>
+	
+    <script type="text/javascript" src="js/common.js"></script>
+	
+	<script language="javascript" type="text/javascript">
+        $(document).ready(function(){
+    
+    
+            
+            function triggerAt(trigger_t) {
+                var triggerCount = 0;
+                function triggerInContext() {
+                    $(videoplayer).on("timeupdate", function(ev) {
+                        console.log(ev);
+                        console.log(ev.target.currentTime);
+                        if (ev.target.currentTime >= trigger_t) {
+                            triggerCount += 1;
+                            console.log("triggered, times: " + triggerCount);
+                            
+                        }
+                    });
+                }
+                triggerInContext();
+            }
+            
+            triggerAt(2);
+            triggerAt(4);
+        });
+		
+    </script>
+</head>
+
+<body>
+
+
+    <div style="text-align: center; vertical-align: middle;" >
+        <video id="videoplayer" 
+            src="videos/103_jalankulkija_ja_auto.risteys.mp4"
+		    autoplay
+            muted>
+        </video>
+
+	</div>
+    
+	<div id="dangerclick" class="dangerclicked"></div>
+    <div id="dangerquery">
+        <textarea id="dangerexplanation">Hei hoi hauki!</textarea>
+        <button id="dangerqueryok">OK</button>
+    </div> 
+    
+</body>

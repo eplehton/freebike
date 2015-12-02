@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Freebike</title>
+	<meta charset="UTF-8">
+	
+    <link href="http://fonts.googleapis.com/css?family=Indie+Flower" rel="stylesheet" type="text/css" />
+    
+	<link type="text/css" rel="stylesheet" href="dangers.css" />
+	
+	<script type="text/javascript" src="js/jquery-2.1.4.js"></script>
+	<script type="text/javascript" src="js/Dexie.min.js"></script>
+    <script language="javascript" type="text/javascript" src="js/FileSaver.js"></script>
+    <script language="javascript" type="text/javascript" src="js/pietimer/jquery.pietimer.min.js"></script>
+    <script type="text/javascript" src="js/common.js"></script>
+	<script type="text/javascript" src="js/dangers.js"></script>
+	
+	
+	<script language="javascript" type="text/javascript">
+        $(document).ready(function(){
+            startSession();
+			setupInteraction();
+		});
+		
+    </script>
+</head>
+
+<body>
+
+    <div id="dangerquery">        
+        <p>What did you press?</p>
+        <textarea class="dangerexplanation" id="dangerwhat"></textarea>
+        <p>Why did you press it?</p>
+        <textarea class="dangerexplanation" id="dangerwhy"></textarea>
+        <p><button id="dangerqueryok">Next</button></p>
+    </div> 
+
+
+    <div style="text-align: center; vertical-align: middle;" >
+        <video id="videoplayer" 
+		    muted>
+        </video>
+	</div>
+    
+    <img id="marker1" src="media/marker1.png" />
+    <img id="marker2" src="media/marker2.png" />
+    <img id="marker3" src="media/marker3.png" />
+    <img id="marker4" src="media/marker4.png" />
+
+	<div id="dangerclick" class="dangerclicked"></div>
+    
+    <div id="start" class="instructions">
+        <p>Player id <input id="playerid" type="text" value="testi" />
+        <p>Load videos <input id="loadvideos" type="file" /></p>
+        
+        <p>
+        <button id="loadreg">Registration</button>
+        <button id="loadexp">Explanation</button>
+        </p>
+        <p>
+        <button id="opendangerquery">Open query</button>
+        </p>
+        <p>
+        <button id="downloaddangers">Download answers</button>
+        </p>
+
+    </div>
+	<div id="clicktoregister" class="instructions"><p>Touch for the next video</p></div>
+	<div id="clicktoexplain" class="instructions"><p>Touch to replay</p></div>
+    <div id="instructions_registration" class="instructions">
+    <p>Ohjeet</p>
+    <p class="instruction-text"> Seuraavaksi näet videoita jotka on kuvattu pyöräilijän näkökulmasta. Tehtävän aikana ajattele että olisit itse 
+    pyöräilijänä tilanteessa.</p>
+    <p class="instruction-text">Videon pyöriessä paina kosketusnäytöltä kaikkia niitä kohteita jotka on hyvä havaita tai 
+    joita on hyvä pitää silmällä jotta ei törmäisi mihinkään. Paina kohdetta heti kun huomaat sen. Voit painaa samaa 
+    kohdetta useamman kerran, mutta yksikin painallus riittää.</p> 
+    <p class="instruction-text">Valitse kohteet siten kuin sinusta tuntuu. Olemme 
+    kiinnostuneita siitä mitä kohteita ihmiset valitsevat tässä tehtävässä. Ei ole oikeita eikä vääriä vastauksia.</p>
+    <p class="instruction-text">
+    Ensin näytämme muutaman esimerkkivideon, jotta näkisit millaiselta videot ja tehtävä näyttää.</p>
+
+    <p>Instructions</p>
+    <p class="instruction-text">Next you will be shown videos which were filmed from a bicyclist's perspective. Imagine that you are the cyclist 
+    in the situation.</p>
+
+    <p class="instruction-text">While the video is playing, use the touchscreen to point out all those targets which would be good 
+    to perceive or good to keep an eye on so that you would not collide with anything. Tap the target immediately when 
+    you see it. You can tap the same target multiple times, but you don’t have to.</p>
+    <p class="instruction-text">Select the targets based on your own 
+    feeling. We are interested to see what targets participants select in this task. There are no right or wrong answers.</p> 
+    <p class="instruction-text">First we show you some example video clips, to give you an idea how the experiment looks like.</p>
+
+    </div>
+    <div id="instructions_explanation" class="instructions">
+    <p>Ohjeet</p>
+    <p class="instruction-text">    
+    Näet nyt videot uudestaan. Tällä kerralla ei tarvitse enää painaa kohteita näytöltä.
+    Sen sijaan jokaisen edellisellä kerralla tekemäsi painalluksen kohdalla video
+    pysähtyy, ja painallus näkyy lyhyesti ruudulla. Tämän jälkeen ruutu menee
+    harmaaksi. Kokeenvetäjä kysyy tämän jälkeen mikä oli kohde jota olit painanut ja miksi painoit
+    sitä. Vastaa sen mukaan mikä tulee ensimmäisenä mieleen.</p>
+    
+    <p>Instructions</p>
+    <p class="instruction-text">Now you will see the videos again. This time you do not need to tap anything
+    on the screen. Instead, for each tap you made earlier, the video will stop
+    and your tap will be visible on the screen for a short period of time. After that, the screen will be masked. 
+    I will ask you what was the target you tapped and why you pressed it. Please answer based on your first impression.</p>
+    
+    </div>
+    
+    
+    <audio id="pointedsound" src="media/Blop-Mark_DiAngelo-79054334.mp3"></audio>
+    
+
+</body>

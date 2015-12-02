@@ -1,0 +1,73 @@
+
+    body {    
+        background-color: #eeeeee;
+    }
+
+	#annobox {
+		width: 100%;
+		
+	}
+    #videobox {
+        width: 70%;
+    }
+    
+    #videoplayer {
+        background-color: #aaaaaa;
+        width: 100%;
+        z-index: 1;
+        /* float:left; */
+    }
+
+    #targetlist{
+		
+        background-color: #fff;
+        width: 30%;
+		float: right;
+    }
+    
+    #videocontrols {
+        /*clear: both;*/
+    }
+
+    .target_icon {
+        position: absolute;
+        width: 2em;
+        height: 2em;
+        border-radius: 50%;
+        background-color: red;
+        opacity: 0.5;
+        z-index: 5;
+        display: none;
+
+    }
+
+    .hitpoint {
+        width: 2em;
+        height: 2em;
+        border-radius: 50%;
+        background-color: white;
+        opacity: 0.5;
+        z-index: 2;
+        display: none;
+        position: absolute;
+    }
+    
+    #options {
+        background-color: #fff;
+        width: 80%;
+        height: 100%;
+        position: absolute;
+        z-index: 10;
+        display: none;
+    }
+    
+    .playback_shot {
+    width: 2em;
+    height: 2em;
+    border-radius: 50%;
+    background-color: white;
+    opacity: 0.5;
+    z-index: 2;
+    display: none;
+    position: absolute;
+    }

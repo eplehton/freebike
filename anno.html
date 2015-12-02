@@ -1,0 +1,68 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+    <title>Anno</title>
+
+    <link type="text/css" rel="stylesheet" href="anno.css" />
+    
+    <script language="javascript" type="text/javascript" src="js/common.js"></script>
+    <script language="javascript" type="text/javascript" src="js/jquery-2.1.4.js"></script>
+    <script language="javascript" type="text/javascript" src="js/FileSaver.js"></script>
+    
+    <script language="javascript" type="text/javascript" src="js/anno.js"></script>
+</head>
+
+<body>
+
+<div>
+	Path: <input id="clippath" type="text" size=20 value="videos/" />
+    File: <input id="videosrc" type="file"/>
+	
+    <button onclick="guiSaveTargets();">Save targets</button> 
+    <button onclick='$("#options").show()'>Options</button>
+</div>
+
+<div id="options"> 
+    <p>Load targets: <input id="targetssrc" type="file" /></p>
+    <p>Load shots: <input id="shotssrc" type="file" /></p>
+    <p><button onclick='$("#options").hide()'>Close</button></p>
+</div>
+
+<div id="annobox">
+	<div id="targetlist"></div>
+
+	<div id="videobox">
+        
+		<video id="videoplayer" src="">
+		</video>
+        
+        <div id="videocontrols">    
+			Video position: <input id="videoposition" type="text" />
+			<br />
+			
+			<button onclick="playPauseVideo()">Play/Pause (s)</button>
+			<button onclick="playVideo(1.0)">&#9658; 1/1 (z)</button>
+			<button onclick="playVideo(0.5)">&#9658; 1/2 (x)</button>
+			<button onclick="playVideo(0.5)">&#9658; 1/4 (c)</button>
+			
+			
+			<br />
+			<button onclick="seekVideo(-10, true)">-10s</button>
+			<button onclick="seekVideo(-0.5, true)">-500ms (a)</button>
+			<button onclick="seekVideo(0.5, true)">500ms (d)</button>
+			<button onclick="seekVideo(10, true)">10s</button>
+			
+			
+		</div>
+	
+        
+        <div id="target_icon_tmpl" class="target_icon"></div>
+        
+	</div>
+	
+</div>
+
+
+
+</body>
+</html>
