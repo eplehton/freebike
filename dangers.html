@@ -33,6 +33,10 @@
         <p>Why did you press it?</p>
         <textarea class="dangerexplanation" id="dangerwhy"></textarea>
         <p><button id="dangerqueryok">Next</button></p>
+	<p><br/><br/></p>
+	<p>Links to Google Forms</p>
+	<p><a href="https://docs.google.com/forms/d/1nnPhnAHb8A9K243oya6iovJNFFIhvL3XKuvchbxGPho/viewform" target="_new">Finnish questionnaire</a></p>
+	<p><a href="https://docs.google.com/forms/d/1K2ybE4yiC6LUSUXMhc4JlpBfsNlOguIgJxdbVNxZil0/viewform" target="_new"> English questionnaire</a></p>
     </div> 
 
 
@@ -47,26 +51,49 @@
     <img id="marker3" src="media/marker3.png" />
     <img id="marker4" src="media/marker4.png" />
 
-	<div id="dangerclick" class="dangerclicked"></div>
+    <div id="dangerclick" class="dangerclicked"></div>
+    
+    <div id="debug_videoarea"></div>
     
     <div id="start" class="instructions">
-        <p>Player id <input id="playerid" type="text" value="testi" />
+	<p>
+        <button id="loadreg">First phase</button>
+        <button id="loadexp">Second phase</button>
+        </p>
+		
+	<p>
+	<br />
+	<br />
+	</p>
+
+	<p>Player id <input id="playerid" type="text" value="testi" />
         <p>Load videos <input id="loadvideos" type="file" /></p>
         
-        <p>
-        <button id="loadreg">Registration</button>
-        <button id="loadexp">Explanation</button>
-        </p>
         <p>
         <button id="opendangerquery">Open query</button>
         </p>
         <p>
         <button id="downloaddangers">Download answers</button>
+	<button id="downloadmarkers">Download markers</button>
         </p>
 
     </div>
-	<div id="clicktoregister" class="instructions"><p>Touch for the next video</p></div>
-	<div id="clicktoexplain" class="instructions"><p>Touch to replay</p></div>
+	<div id="clicktoregister" class="instructions">
+	<p class="instruction-text">Katso ensin ruudulla näkyvää merkkiä kahden sekunnin ajan. Kosketa sen jälkeen ruutua aloittaaksesi seuraavan videon.</p>
+	<p class="instruction-text">Please look at the marker on the screen for two seconds. Then start the next video by touching the screen.</p>
+	
+	<img id="marker5" src="media/marker5.png" />
+	
+	</div>
+	
+	<div id="clicktoexplain" class="instructions">
+	
+	<p class="instruction-text">Katso ensin ruudulla näkyvää merkkiä kahden sekunnin ajan. Kosketa sen jäeen ruutua aloittaaksesi seuraavan videon.</p>
+	<p class="instruction-text">Please look at the marker on the screen for two seconds. Then start the next video by touching the screen.</p>
+	
+	<img id="marker5" src="media/marker5.png" />
+	
+	</div>
     <div id="instructions_registration" class="instructions">
     <p>Ohjeet</p>
     <p class="instruction-text"> Seuraavaksi näet videoita jotka on kuvattu pyöräilijän näkökulmasta. Tehtävän aikana ajattele että olisit itse 
@@ -77,7 +104,7 @@
     <p class="instruction-text">Valitse kohteet siten kuin sinusta tuntuu. Olemme 
     kiinnostuneita siitä mitä kohteita ihmiset valitsevat tässä tehtävässä. Ei ole oikeita eikä vääriä vastauksia.</p>
     <p class="instruction-text">
-    Ensin näytämme muutaman esimerkkivideon, jotta näkisit millaiselta videot ja tehtävä näyttää.</p>
+    Ensimmäinen video on harjoittelua varten.</p>
 
     <p>Instructions</p>
     <p class="instruction-text">Next you will be shown videos which were filmed from a bicyclist's perspective. Imagine that you are the cyclist 
@@ -88,7 +115,7 @@
     you see it. You can tap the same target multiple times, but you don’t have to.</p>
     <p class="instruction-text">Select the targets based on your own 
     feeling. We are interested to see what targets participants select in this task. There are no right or wrong answers.</p> 
-    <p class="instruction-text">First we show you some example video clips, to give you an idea how the experiment looks like.</p>
+    <p class="instruction-text">First video is for getting used to the task.</p>
 
     </div>
     <div id="instructions_explanation" class="instructions">

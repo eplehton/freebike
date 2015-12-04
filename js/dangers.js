@@ -17,12 +17,20 @@ var db = new Dexie("Freebike.Dangers");
 //dangers: "++id,player_id,session_id,src,x,y,t,explanation,[player_id+session_id+src]"
 //}); otto's answers are here
 
-db.version(4).stores({
-    dangers: "++id,player_id,session_id,src,x,y,t,explanation,screenx,screeny,marker1x,marker1y,marker4x,marker4y,[player_id+src]"
+// 2015120301 was registered with this: we had problems with 
+//db.version(4).stores({
+//    dangers: "++id,player_id,session_id,src,x,y,t,explanation,screenx,screeny,marker1x,marker1y,marker4x,marker4y,[player_id+src]"
+//});
+// note version 4 data has also real_t even though it is not in the scheme...
+
+
+db.version(6).stores({
+    dangers: "++id,player_id,session_id,src,x,y,screenx,screeny,t,real_t,explanation,[player_id+src]",
+    markers: "++id,real_t,marker_id,top,left,width,height,[real_t+marker_id]"
 });
 
 
-function Danger(x, y, t, src, explanation, screenx, screeny, marker1x, marker1y, marker4x, marker4y) {
+function Danger(x, y, t, src, explanation, screenx, screeny) {
     this.player_id = player_id;
     this.session_id = session_id;
     
@@ -32,30 +40,69 @@ function Danger(x, y, t, src, explanation, screenx, screeny, marker1x, marker1y,
     this.src = src;
     this.real_t = Date.now();
     this.explanation = explanation;
-    
-    // This is for matching the presses to eye tracker.
-    // Mostly redundant to save everytime but at least it is up-to-date. 
+
     this.screenx = screenx;
     this.screeny = screeny;
-    this.marker1x = marker1x;
-    this.marker1y = marker1y;
-    this.marker4x = marker4x;
-    this.marker4y = marker4y;
-    
-    
+	
+/*	
+    // 2015120301 was registered with this: we had problems with 
+    // This is for matching the presses to eye tracker.
+    // Mostly redundant to save everytime but at least it is up-to-date. 
+  
+	
+    // location that was saved: what a mess!
+    //    var marker1x = marker1offset.left;
+    //    var marker1y = marker1offset.top;
+    //    var marker4x = marker4offset.left + $("marker4").width();
+    //    var marker4y = marker4offset.top + $("marker4").width() // why top + width sic!, should be -
+
+    // // positioning algorithm
+    //$("#marker1").offset({top: offset.top, left: offset.left - vw});
+    //$("#marker2").offset({top: offset.top, left: offset.left + vw});
+    //$("#marker3").offset({top: offset.top + vh, left: offset.left - mw});
+    //$("#marker4").offset({top: offset.top + vh, left: offset.left + vw}); // why top + width, should be -
+
+	
+    this.screenx = screenx;
+    this.screeny = screeny;
+    this.marker1x = marker1x; // top left
+    this.marker1y = marker1y; // top left
+    this.marker4x = marker4x; // bottom right
+    this.marker4y = marker4y; // bottom right
+*/
+
 }
-
-
 
 Danger.prototype.save = function() {
     db.dangers.put(this)
-    .then( function(e) { console.log("Putted " + this + " " + e);}  )
-    .catch( function(e) { console.log("Problems saving! " + e);} );
+    .then( function(e) { console.log("Danger click saved. " + this + " " + e);}  )
+    .catch( function(e) { console.log("Problems saving danger clicks! " + e);} );
 }
 
 
+function Marker(real_t, marker_id, top, left, width, height) {
+    /*
+	Marker class represents the marker positions on the screen. 
+    */
+    this.real_t = real_t;
+    this.marker_id = marker_id;
+    
+    this.top = top;
+    this.left = left;
+    this.width = width;
+    this.height = height;
+}
+
+Marker.prototype.save = function() {
+    db.markers.put(this)
+    .then( function(e) { console.log("Marker position saved." + this + " " + e);}  )
+    .catch( function(e) { console.log("Problems saving markers! " + e);} );
+}
+
 db.dangers.mapToClass(Danger);
+db.markers.mapToClass(Marker);
 db.open();
+
 
 
 function downloadDangers() {
@@ -64,6 +111,15 @@ function downloadDangers() {
         var dangers_json = JSON.stringify(saved_dangers);
         var blob = new Blob([dangers_json], {type : "text/plain;charset=utf-8"});
         saveAs(blob, "dangers.json");
+    });        
+}
+
+function downloadMarkers() {
+    db.markers.toArray().then( function(saved_markers) {
+        console.log(saved_markers);
+        var markers_json = JSON.stringify(saved_markers);
+        var blob = new Blob([markers_json], {type : "text/plain;charset=utf-8"});
+        saveAs(blob, "markers.json");
     });        
 }
 
@@ -148,9 +204,9 @@ function setupInteraction() {
     $(clicktoexplain).click(function(ev) {
         
         $(clicktoexplain).hide();
-        showMarkers();
-        startExplanation(videoPos);
         
+        startExplanation(videoPos);
+        showMarkers();
                 
         // what we do after the explanation is done
         $(videoplayer).off("ended");
@@ -232,7 +288,10 @@ function setupInteraction() {
     $("#downloaddangers").click( function() {
         downloadDangers();
     });
-        
+       
+    $("#downloadmarkers").click( function() {
+        downloadMarkers();
+    });    
     
     
     // Start the show
@@ -275,8 +334,8 @@ function hideMarkers() {
     $("#marker4").hide();
 }
 
-function registerDanger(x, y, t, src, screenx, screeny, marker1x, marker1y, marker4x, marker4y) {
-    var d = new Danger(x, y, t, src, "", screenx, screeny, marker1x, marker1y, marker4x, marker4y);
+function registerDanger(x, y, t, src, screenx, screeny) {
+    var d = new Danger(x, y, t, src, "", screenx, screeny);
     d.save();
 }
 
@@ -349,14 +408,56 @@ function showMarkers() {
     var vw = $("#videoplayer").width();
     var vh = $("#videoplayer").height();
     var mw = $("#marker1").width();
-        
-    $("#marker1").offset({top: offset.top, left: offset.left - mw});
-    $("#marker2").offset({top: offset.top, left: offset.left + vw});
-    $("#marker3").offset({top: offset.top + vh, left: offset.left - mw});
-    $("#marker4").offset({top: offset.top + vh, left: offset.left + vw});
+
+    // we use the same positioning function as for clicks to get absolutely
+    // comparable coordinates
+    var tl = videoToClient($(videoplayer)[0], 0, 0);
+    var tr = videoToClient($(videoplayer)[0], 1, 0);
+    var bl = videoToClient($(videoplayer)[0], 0, 1);
+    var br = videoToClient($(videoplayer)[0], 1, 1);
+  
+    
+    $("#debug_videoarea").show();
+    $("#debug_videoarea").offset({top: tl[1], left: tl[0]});
+    $("#debug_videoarea").width( br[0] - tl[0] );
+    $("#debug_videoarea").height( br[1] - tl[1] );
     
     
-    console.log( $("#marker1").offset() );
+
+    // markers are place outside the video screen
+    $("#marker1").offset({top: tl[1] - 0.5 * $("#marker1").height(), left: tl[0] - $("#marker1").width()});
+    $("#marker2").offset({top: tr[1] - 0.5 * $("#marker2").height(), left: tr[0]});
+    $("#marker3").offset({top: bl[1] + 0.5 * $("#marker3").height(), left: bl[0] - $("#marker3").width()});
+    $("#marker4").offset({top: br[1] + 0.5 * $("#marker4").height(), left: br[0]});
+    
+    // save positions
+    var real_t = Date.now();
+    var marker_id = "marker1";
+    var m1 = new Marker(real_t, marker_id, 
+			$("#"+marker_id).offset().top, $("#"+marker_id).offset().left, 
+			$("#"+marker_id).width(), $("#"+marker_id).height())
+    var marker_id = "marker2";
+    var m2 = new Marker(real_t, marker_id, 
+			$("#"+marker_id).offset().top, $("#"+marker_id).offset().left, 
+			$("#"+marker_id).width(), $("#"+marker_id).height())
+    var marker_id = "marker3";
+    var m3 = new Marker(real_t, marker_id, 
+			$("#"+marker_id).offset().top, $("#"+marker_id).offset().left, 
+			$("#"+marker_id).width(), $("#"+marker_id).height())
+    var marker_id = "marker4";
+    var m4 = new Marker(real_t, marker_id, 
+			$("#"+marker_id).offset().top, $("#"+marker_id).offset().left, 
+			$("#"+marker_id).width(), $("#"+marker_id).height())
+    
+    console.log('br' + br)
+    console.log('m4' + m4.top + " " + m4.left + " " + m4.width + " " + m4.height)
+    
+    m1.save();
+    m2.save();
+    m3.save();
+    m4.save();
+   
+    //console.log( $("#marker1").offset() );
 }
 
 
@@ -386,18 +487,18 @@ function startRegistration(videoPos) {
         var relX = relCrds[0];
         var relY = relCrds[1];
 
-        var marker1offset = $("#marker1").offset();
-        var marker1offset = $("#marker1").offset();
+        /*var marker1offset = $("#marker1").offset();
+        var marker4offset = $("#marker4").offset();
         var marker1x = marker1offset.left;
         var marker1y = marker1offset.top;
         var marker4x = marker4offset.left + $("marker4").width();
-        var marker4y = marker4offset.top + $("marker4").width();
+        var marker4y = marker4offset.top + $("marker4").width();*/
         
         
-        registerDanger(relX, relY, t, src, screenX, screenY, marker1x, marker1y, marker4x, marker4y);
+        registerDanger(relX, relY, t, src, screenX, screenY);
 
         // visual effect
-        var currentDanger = showDangerClick(x, y);
+        var currentDanger = showDangerClick(screenX, screenY);
         setTimeout( function() { currentDanger.style.display = "none"}, SHOW_CLICK_TIME);
 
         // sound effect
@@ -405,7 +506,7 @@ function startRegistration(videoPos) {
     });
 
     
-    showMarkers();
+    
     // make it run
     $(videoplayer)[0].play()
         
@@ -461,37 +562,12 @@ function queryDangers(dangers) {
             d.explanation = localStorage.getItem("dangers.response");
             d.save();
             
-            //dangerClick.style.display = "none";
-
-            //$(videoplayer).show();
             
             $(videoplayer).fadeIn(600, function() { $(videoplayer)[0].play(); }); 
         }
         
         window.addEventListener('storage', proceedAfterResponse);
-    
-        /* 
-        // one window version
-        showDangerQuery(d, function() {
-            // this is the function which is called after showDangerQuery
-            // rewrite with promises?
-            console.log("showDangerQuery called with " + d.t);
-            
-            var txt = $(dangerexplanation).val();
-            console.log("explanation" + txt);
-            
-            d.explanation = txt;
-            d.save();
-            
-            $(dangerquery).hide();
-            
-            $(dangerexplanation).val("");
-            $(dangerclick).hide();
-            
-            
-            $(videoplayer)[0].play();
-        });
-        */
+	
     }
     
     
@@ -521,47 +597,4 @@ function queryDangers(dangers) {
     // set it play and wait for the triggers
     $(videoplayer)[0].play();
     
-    
-    
-    
-/*     console.log("queryDangersCalled");
-    if (dangers.length > 0) {
-        console.log("dangers.length > 0");
-        $(videoplayer)[0].play();
-        
-        var d = dangers.shift();
-        
-        setTimeout(function() { 
-
-            $(videoplayer)[0].pause();
-
-
-            var clientCrds = videoToClient($(videoplayer)[0], d.x, d.y);
-            var dangerClick = showDangerClick(clientCrds[0], clientCrds[1]);
-            
-            showDangerQuery(d, function() {
-                $(dangerquery).hide();
-                dangerClick.style.display = "none";
-                
-                var txt = $(dangerexplanation).val();
-                setExplanation(d, txt);
-                console.log("explanation set, will call queryDangers with " + dangers);
-                queryDangers(dangers);
-                });
-                
-            }, 1000 * (d.t - $(videoplayer)[0].currentTime));
-        console.log("setTimeout called with " + (1000 * (d.t - $(videoplayer)[0].currentTime)) );
-            
-    } else {
-        // to the next video
-        
-        videoPos += 1;
-        if (videoPos < videos.length) {
-            console.log("will call startNextExplanation with " + videoPos);
-            startNextExplanation(videoPos);
-        } else {
-            console.log("Valmis");
-            alert("Valmis!");
-        }
-    } */
 }
