@@ -25,12 +25,12 @@ var db = new Dexie("Freebike.Dangers");
 
 
 db.version(6).stores({
-    dangers: "++id,player_id,session_id,src,x,y,screenx,screeny,t,real_t,explanation,[player_id+src]",
-    markers: "++id,real_t,marker_id,top,left,width,height,[real_t+marker_id]"
+    dangers: "++id,player_id,session_id,src,x,y,clientx,clienty,t,real_t,explanation,[player_id+src]",
+    markers: "++id,real_t,marker_id,top,left,width,height,video_left, video_right, video_top, video_bottom,[real_t+marker_id]"
 });
 
 
-function Danger(x, y, t, src, explanation, screenx, screeny) {
+function Danger(x, y, t, src, explanation, clientx, clienty) {
     this.player_id = player_id;
     this.session_id = session_id;
     
@@ -41,8 +41,8 @@ function Danger(x, y, t, src, explanation, screenx, screeny) {
     this.real_t = Date.now();
     this.explanation = explanation;
 
-    this.screenx = screenx;
-    this.screeny = screeny;
+    this.clientx = clientx;
+    this.clienty = clienty;
 	
 /*	
     // 2015120301 was registered with this: we had problems with 
@@ -80,7 +80,7 @@ Danger.prototype.save = function() {
 }
 
 
-function Marker(real_t, marker_id, top, left, width, height) {
+function Marker(real_t, marker_id, top, left, width, height, videoLeft, videoRight, videoTop, videoBottom) {
     /*
 	Marker class represents the marker positions on the screen. 
     */
@@ -91,6 +91,13 @@ function Marker(real_t, marker_id, top, left, width, height) {
     this.left = left;
     this.width = width;
     this.height = height;
+	
+	
+    this.video_left = videoLeft;
+    this.video_right = videoRight;
+    this.video_top = videoTop;
+    this.video_bottom = videoBottom;
+	
 }
 
 Marker.prototype.save = function() {
@@ -173,12 +180,26 @@ function setupInteraction() {
     
     $(clicktoregister).click(function(ev) {
         // handles changing the videos
+	$(videoplayer).hide();
         $(clicktoregister).hide();
-        
+     
+   
+	
+	//$("#videoplayer").showMarkers();
+	
+	    
         startRegistration(videoPos);
-        showMarkers();
-
-        
+     
+	
+	//setTimeout(showMarkers(), 1000);
+        // getting the markers positioned is tricky, because the video size changes
+	// during the first 0-1000 ms before calling play
+	// It is MUST to reposition the markers after the size has been set.
+	
+	
+	$(videoplayer).resize( function() { showMarkers(); });
+	$(videoplayer).fadeIn(600, showMarkers);
+	
         // what we do after the registeration is done
         $(videoplayer).off("ended");
         $(videoplayer).on("ended", function(ev) {
@@ -186,10 +207,12 @@ function setupInteraction() {
             if (videoPos < videos.length) {
                 $(clicktoregister).show(); // wait for the player
                 hideMarkers();
+		$(videoplayer).hide();
             } else {
                 console.log("Valmis!");
                 $(start).show();
                 hideMarkers();
+		$(videoplayer).hide();
             }
         });
         
@@ -202,11 +225,13 @@ function setupInteraction() {
    
     
     $(clicktoexplain).click(function(ev) {
-        
+        $(videoplayer).hide();
         $(clicktoexplain).hide();
         
         startExplanation(videoPos);
-        showMarkers();
+        
+	$(videoplayer).resize( function() { showMarkers(); });
+	$(videoplayer).fadeIn(600, showMarkers);
                 
         // what we do after the explanation is done
         $(videoplayer).off("ended");
@@ -215,10 +240,12 @@ function setupInteraction() {
             if (videoPos < videos.length) {
                 $(clicktoexplain).show();
                 hideMarkers();
+		$(videoplayer).hide();
             } else {
                 console.log("Valmis!");
                 $(start).show();
                 hideMarkers();
+		$(videoplayer).hide();
             }
         });
             
@@ -264,8 +291,16 @@ function setupInteraction() {
         $("#clicktoregister").show();
     });
     
+
+   
     $("#loadexp").click( function() {
-        $(start).hide();
+        $("#start").hide();
+        // wait for the player
+        $("#instructions_explanation").show();
+    });
+
+    $("#instructions_explanation").click( function() {
+	$("#instructions_explanation").hide();
         videoPos = 0;
         
         player_id = $(playerid).val();
@@ -411,46 +446,54 @@ function showMarkers() {
 
     // we use the same positioning function as for clicks to get absolutely
     // comparable coordinates
+	
+	
+    
     var tl = videoToClient($(videoplayer)[0], 0, 0);
     var tr = videoToClient($(videoplayer)[0], 1, 0);
     var bl = videoToClient($(videoplayer)[0], 0, 1);
     var br = videoToClient($(videoplayer)[0], 1, 1);
   
-    
+    /*
     $("#debug_videoarea").show();
     $("#debug_videoarea").offset({top: tl[1], left: tl[0]});
     $("#debug_videoarea").width( br[0] - tl[0] );
     $("#debug_videoarea").height( br[1] - tl[1] );
+    */
     
     
+    // setInterval(rai, 500);    
 
     // markers are place outside the video screen
-    $("#marker1").offset({top: tl[1] - 0.5 * $("#marker1").height(), left: tl[0] - $("#marker1").width()});
-    $("#marker2").offset({top: tr[1] - 0.5 * $("#marker2").height(), left: tr[0]});
-    $("#marker3").offset({top: bl[1] + 0.5 * $("#marker3").height(), left: bl[0] - $("#marker3").width()});
-    $("#marker4").offset({top: br[1] + 0.5 * $("#marker4").height(), left: br[0]});
+    $("#marker1").offset({top: tl[1] - 0 * $("#marker1").height(), left: tl[0] - $("#marker1").width()});
+    $("#marker2").offset({top: tr[1] - 0 * $("#marker2").height(), left: tr[0]});
+    $("#marker3").offset({top: bl[1] - 1 * $("#marker3").height(), left: bl[0] - $("#marker3").width()});
+    $("#marker4").offset({top: br[1] - 1 * $("#marker4").height(), left: br[0]});
     
     // save positions
     var real_t = Date.now();
     var marker_id = "marker1";
     var m1 = new Marker(real_t, marker_id, 
 			$("#"+marker_id).offset().top, $("#"+marker_id).offset().left, 
-			$("#"+marker_id).width(), $("#"+marker_id).height())
+			$("#"+marker_id).width(), $("#"+marker_id).height(),
+			tl[0], br[0], tl[1], br[1]);
     var marker_id = "marker2";
     var m2 = new Marker(real_t, marker_id, 
 			$("#"+marker_id).offset().top, $("#"+marker_id).offset().left, 
-			$("#"+marker_id).width(), $("#"+marker_id).height())
+			$("#"+marker_id).width(), $("#"+marker_id).height(),
+			tl[0], br[0], tl[1], br[1]);
+    
     var marker_id = "marker3";
     var m3 = new Marker(real_t, marker_id, 
 			$("#"+marker_id).offset().top, $("#"+marker_id).offset().left, 
-			$("#"+marker_id).width(), $("#"+marker_id).height())
+			$("#"+marker_id).width(), $("#"+marker_id).height(),
+			tl[0], br[0], tl[1], br[1]);
     var marker_id = "marker4";
     var m4 = new Marker(real_t, marker_id, 
 			$("#"+marker_id).offset().top, $("#"+marker_id).offset().left, 
-			$("#"+marker_id).width(), $("#"+marker_id).height())
+			$("#"+marker_id).width(), $("#"+marker_id).height(),
+			tl[0], br[0], tl[1], br[1]);
     
-    console.log('br' + br)
-    console.log('m4' + m4.top + " " + m4.left + " " + m4.width + " " + m4.height)
     
     m1.save();
     m2.save();
@@ -480,10 +523,10 @@ function startRegistration(videoPos) {
         var t = vplayer.currentTime;
         var src = vplayer.src.split("/").pop(); 
 
-        var screenX = ev.clientX;
-        var screenY = ev.clientY;
+        var clientX = ev.clientX;
+        var clientY = ev.clientY;
 
-        var relCrds = clientToVideo(vplayer, screenX, screenY);
+        var relCrds = clientToVideo(vplayer, clientX, clientY);
         var relX = relCrds[0];
         var relY = relCrds[1];
 
@@ -495,10 +538,10 @@ function startRegistration(videoPos) {
         var marker4y = marker4offset.top + $("marker4").width();*/
         
         
-        registerDanger(relX, relY, t, src, screenX, screenY);
+        registerDanger(relX, relY, t, src, clientX, clientY);
 
         // visual effect
-        var currentDanger = showDangerClick(screenX, screenY);
+        var currentDanger = showDangerClick(clientX, clientY);
         setTimeout( function() { currentDanger.style.display = "none"}, SHOW_CLICK_TIME);
 
         // sound effect
@@ -508,10 +551,9 @@ function startRegistration(videoPos) {
     
     
     // make it run
+    
     $(videoplayer)[0].play()
-        
-
-
+    
 }
 
 function startExplanation(videoPos) {
@@ -562,7 +604,10 @@ function queryDangers(dangers) {
             d.explanation = localStorage.getItem("dangers.response");
             d.save();
             
-            
+            // We start playing only after the timeout because the participant may 
+	    // have clicked very fast after the previous.
+	    // Here we do not need to refresh markers, because the video has already played
+	    // and is therefore already in the right size. 
             $(videoplayer).fadeIn(600, function() { $(videoplayer)[0].play(); }); 
         }
         

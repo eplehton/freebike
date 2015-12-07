@@ -16,6 +16,8 @@ function clientToVideo(vp, clientX, clientY) {
 }   
 
 function videoToClient(vp, relX, relY) {
+    //var clientX = relX * $("#videoplayer").width() +  vp.offsetLeft;
+    //var clientY = relY * $("#videoplayer").height() + vp.offsetTop;
     var clientX = relX * vp.offsetWidth + vp.offsetLeft
     var clientY = relY * vp.offsetHeight + vp.offsetTop
     return [clientX, clientY]
