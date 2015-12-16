@@ -131,3 +131,12 @@ body {
 	width: 10em;
 	height: 5em;
 }
+
+
+#currentvideo {
+	position: absolute;
+	width: 10em;
+	height: 3em;
+	bottom: 1em;
+	color: grey;
+}

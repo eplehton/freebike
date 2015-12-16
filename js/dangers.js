@@ -23,14 +23,20 @@ var db = new Dexie("Freebike.Dangers");
 //});
 // note version 4 data has also real_t even though it is not in the scheme...
 
-
-db.version(6).stores({
+/*db.version(6).stores({
     dangers: "++id,player_id,session_id,src,x,y,clientx,clienty,t,real_t,explanation,[player_id+src]",
     markers: "++id,real_t,marker_id,top,left,width,height,video_left, video_right, video_top, video_bottom,[real_t+marker_id]"
+});*/
+
+
+db.version(7).stores({
+    dangers: "++id,player_id,session_id,src,x,y,clientx,clienty,t,real_t,explanation,explanation_real_t,[player_id+src]",
+    markers: "++id,real_t,marker_id,top,left,width,height,video_left, video_right, video_top, video_bottom,[real_t+marker_id]",
+    expevent: "++id,player_id,session_id,src,event,t,real_t,[player_id+src]"
 });
 
 
-function Danger(x, y, t, src, explanation, clientx, clienty) {
+function Danger(x, y, t, src, clientx, clienty, explanation, explanation_real_t) {
     this.player_id = player_id;
     this.session_id = session_id;
     
@@ -39,10 +45,13 @@ function Danger(x, y, t, src, explanation, clientx, clienty) {
     this.t = t;
     this.src = src;
     this.real_t = Date.now();
-    this.explanation = explanation;
-
+    
     this.clientx = clientx;
     this.clienty = clienty;
+	
+    this.explanation = explanation;
+    this.explanation_real_t = explanation_real_t;
+
 	
 /*	
     // 2015120301 was registered with this: we had problems with 
@@ -106,8 +115,27 @@ Marker.prototype.save = function() {
     .catch( function(e) { console.log("Problems saving markers! " + e);} );
 }
 
+function ExpEvent(src, event, t) {
+    this.player_id = player_id;
+    this.session_id = session_id;
+    
+    this.src = src;
+    this.t = t;
+    this.real_t = Date.now();
+    this.event = event;
+
+}
+
+ExpEvent.prototype.save = function() {
+    db.expevent.put(this)
+    .then( function(e) { console.log("ExpEvent saved." + this + " " + e);}  )
+    .catch( function(e) { console.log("Problems saving ExpEvent! " + e);} );
+}
+
+
 db.dangers.mapToClass(Danger);
 db.markers.mapToClass(Marker);
+db.expevent.mapToClass(ExpEvent);
 db.open();
 
 
@@ -127,6 +155,15 @@ function downloadMarkers() {
         var markers_json = JSON.stringify(saved_markers);
         var blob = new Blob([markers_json], {type : "text/plain;charset=utf-8"});
         saveAs(blob, "markers.json");
+    });        
+}
+
+function downloadExpEvents() {
+    db.expevent.toArray().then( function(saved_expevents) {
+        console.log(saved_expevents);
+        var expevent_json = JSON.stringify(saved_expevents);
+        var blob = new Blob([expevent_json], {type : "text/plain;charset=utf-8"});
+        saveAs(blob, "expevents.json");
     });        
 }
 
@@ -191,30 +228,6 @@ function setupInteraction() {
         startRegistration(videoPos);
      
 	
-	//setTimeout(showMarkers(), 1000);
-        // getting the markers positioned is tricky, because the video size changes
-	// during the first 0-1000 ms before calling play
-	// It is MUST to reposition the markers after the size has been set.
-	
-	
-	$(videoplayer).resize( function() { showMarkers(); });
-	$(videoplayer).fadeIn(600, showMarkers);
-	
-        // what we do after the registeration is done
-        $(videoplayer).off("ended");
-        $(videoplayer).on("ended", function(ev) {
-            videoPos += 1;
-            if (videoPos < videos.length) {
-                $(clicktoregister).show(); // wait for the player
-                hideMarkers();
-		$(videoplayer).hide();
-            } else {
-                console.log("Valmis!");
-                $(start).show();
-                hideMarkers();
-		$(videoplayer).hide();
-            }
-        });
         
     });
    
@@ -228,26 +241,7 @@ function setupInteraction() {
         $(videoplayer).hide();
         $(clicktoexplain).hide();
         
-        startExplanation(videoPos);
-        
-	$(videoplayer).resize( function() { showMarkers(); });
-	$(videoplayer).fadeIn(600, showMarkers);
-                
-        // what we do after the explanation is done
-        $(videoplayer).off("ended");
-        $(videoplayer).on("ended", function(ev) {
-            videoPos += 1;
-            if (videoPos < videos.length) {
-                $(clicktoexplain).show();
-                hideMarkers();
-		$(videoplayer).hide();
-            } else {
-                console.log("Valmis!");
-                $(start).show();
-                hideMarkers();
-		$(videoplayer).hide();
-            }
-        });
+        startExplanation(videoPos);        
             
     });
     
@@ -328,6 +322,11 @@ function setupInteraction() {
         downloadMarkers();
     });    
     
+    $("#downloadexpevents").click( function() {
+	downloadExpEvents();
+    });    
+    
+    
     
     // Start the show
     
@@ -370,7 +369,7 @@ function hideMarkers() {
 }
 
 function registerDanger(x, y, t, src, screenx, screeny) {
-    var d = new Danger(x, y, t, src, "", screenx, screeny);
+    var d = new Danger(x, y, t, src, screenx, screeny, "", 0);
     d.save();
 }
 
@@ -505,7 +504,8 @@ function showMarkers() {
 
 
 function startRegistration(videoPos) {
-    $(videoplayer)[0].src = "videos/" + videos[videoPos];
+    var videoSrc = "videos/" + videos[videoPos];
+    $(videoplayer)[0].src = videoSrc;
 
     // videoplayer click action
     $(videoplayer).off("click");
@@ -548,17 +548,54 @@ function startRegistration(videoPos) {
         $(pointedsound)[0].play();
     });
 
+
     
+
+    $(videoplayer).off("play");
+    $(videoplayer).on("play", function(ev) {
+	var ev = new ExpEvent(videoSrc, 'regplay', $(videoplayer)[0].currentTime);
+	ev.save();
+    });
     
-    // make it run
+    // getting the markers positioned is tricky, because the video size changes	// during the first 0-1000 ms before calling play
+    // It is MUST to reposition the markers after the size has been set.
+    $(videoplayer).off("resize");
+    $(videoplayer).resize( function() { showMarkers(); });
+    $(videoplayer).fadeIn(600, showMarkers);
+
+    // what we do after the registeration is done
+    $(videoplayer).off("ended");
+    $(videoplayer).on("ended", function(ev) {
+        var ev = new ExpEvent(videoSrc, 'regended', $(videoplayer)[0].currentTime);
+	ev.save();
+	    
+	videoPos += 1;
+	if (videoPos < videos.length) {
+	    $(clicktoregister).show(); // wait for the player
+	    hideMarkers();
+	    $(videoplayer).hide();
+	} else {
+	    console.log("Valmis!");
+	    $(start).show();
+	    hideMarkers();
+	    $(videoplayer).hide();
+	}
+    });
     
-    $(videoplayer)[0].play()
+        
+    $(videoplayer)[0].play();
+
+    
+    // update the clip id
+    var clipId = videoSrc.substring( videoSrc.indexOf("/")+1, videoSrc.indexOf("/") + 4 );
+    $("#currentvideo").html( (videoPos+1) +"/"+ videos.length + " ("+ clipId +")" );
     
 }
 
 function startExplanation(videoPos) {
-    $(videoplayer)[0].src = "videos/" + videos[videoPos];
-    
+    var videoSrc = "videos/" + videos[videoPos];
+    $(videoplayer)[0].src = videoSrc;
+	
     // make sure there is no click actions left
     $(videoplayer).off("click"); 
 
@@ -574,6 +611,41 @@ function startExplanation(videoPos) {
             queryDangers(dangerArr);
         });
     
+    $(videoplayer).off("resize");
+    $(videoplayer).resize( function() { showMarkers(); });
+    $(videoplayer).fadeIn(600, showMarkers);
+	
+    // register when it starts
+    $(videoplayer).off("play");
+    $(videoplayer).on("play", function(ev) {
+	var ev = new ExpEvent(videoSrc, 'explplay', $(videoplayer)[0].currentTime);
+	ev.save();
+    });
+    
+    $(videoplayer).off("pause");
+    $(videoplayer).on("pause", function(ev) {
+	var ev = new ExpEvent(videoSrc, 'explpause', $(videoplayer)[0].currentTime);
+	ev.save();
+    });
+    
+    // what we do after the explanation is done
+    $(videoplayer).off("ended");
+    $(videoplayer).on("ended", function(ev) {
+        var ev = new ExpEvent(videoSrc, 'explended', $(videoplayer)[0].currentTime);
+	ev.save();
+	    
+	videoPos += 1;
+        if (videoPos < videos.length) {
+   	    $(clicktoexplain).show();
+	    hideMarkers();
+	    $(videoplayer).hide();
+        } else {
+	    console.log("Valmis!");
+	    $(start).show();
+	    hideMarkers();
+	    $(videoplayer).hide();
+        }
+    });
 }
     
 
@@ -582,9 +654,10 @@ function queryDangers(dangers) {
     function triggerAction(d) {
         // this is called when trigger is launched for the danger
         
-        // stop the video
+        // pause the video
         $(videoplayer)[0].pause();
-        // notify the dangerQuery window via localStorage
+        
+	// notify the dangerQuery window via localStorage
         localStorage.setItem("dangers.pleaseask", Date.now());
 
         var clientCrds = videoToClient($(videoplayer)[0], d.x, d.y);
@@ -602,6 +675,7 @@ function queryDangers(dangers) {
             window.removeEventListener('storage', proceedAfterResponse);
             
             d.explanation = localStorage.getItem("dangers.response");
+	    d.explanation_real_t = Date.now();
             d.save();
             
             // We start playing only after the timeout because the participant may 
