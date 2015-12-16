@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<link type="text/css" rel="stylesheet" href="sagame.css" />
+	<title> Test </title>
+	
+	<script language="javascript" type="text/javascript" src="js/jquery-2.1.4.js"></script>
+    <script language="javascript" type="text/javascript" src="js/sagame_clips.js"></script>
+    <script language="javascript" type="text/javascript" src="js/sagame.js"></script>
+	<script language="javascript" type="text/javascript">
+		loadTargetsFrom('js/sagame_targets_20151202.json');
+		$(document).ready(function(){				
+			setupInteraction();
+        });
+    </script>
+
+</head>
+
+<body>
+
+    <div class="target" id="target_template"></div>	
+
+    <div id="screen">
+
+    <div id="points"><p>0</p></div>
+
+    <video id="videoplayer" src="" muted></video> 
+    </div>
+
+    <button id="checkbutton" onclick="confirmAnswers();">Tarkista</button> 
+    <button id="nextbutton" onclick="startNextClip();">Seuraava</button>
+    
+	<div class="query_box" id="query_box_template"> 
+		<div class="query_box_target">
+		</div>
+		<div class="query_box_buttons"</div>
+			<div class="query_box_item pedestrian">J</div>
+			<div class="query_box_item bicycle">P</div>
+			<div class="query_box_item car">A</div>
+			<div class="query_box_item occlusion">O</div>
+			<div class="query_box_item nothing">Ei</div> 
+		</div>
+	</div>
+
+    <audio id="targethitplayer" src="../game/media/targethit.mp3"></audio>
+    <audio id="missplayer" src="../game/media/188039__antumdeluge__bicycle-horn.wav"></audio>
+    
+    
+</body>
+</html>
