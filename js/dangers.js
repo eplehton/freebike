@@ -227,7 +227,7 @@ function setupInteraction() {
 	    
         startRegistration(videoPos);
      
-	
+	videoPos += 1;
         
     });
    
@@ -242,7 +242,8 @@ function setupInteraction() {
         $(clicktoexplain).hide();
         
         startExplanation(videoPos);        
-            
+        
+	videoPos += 1;
     });
     
     $(loadvideos).change( function(ev) {
@@ -568,9 +569,9 @@ function startRegistration(videoPos) {
     $(videoplayer).on("ended", function(ev) {
         var ev = new ExpEvent(videoSrc, 'regended', $(videoplayer)[0].currentTime);
 	ev.save();
-	    
-	videoPos += 1;
-	if (videoPos < videos.length) {
+	
+	// it would nicer to have this at the level on higher in the ui logic
+	if (videoPos + 1 < videos.length) {
 	    $(clicktoregister).show(); // wait for the player
 	    hideMarkers();
 	    $(videoplayer).hide();
@@ -633,9 +634,8 @@ function startExplanation(videoPos) {
     $(videoplayer).on("ended", function(ev) {
         var ev = new ExpEvent(videoSrc, 'explended', $(videoplayer)[0].currentTime);
 	ev.save();
-	    
-	videoPos += 1;
-        if (videoPos < videos.length) {
+	
+        if (videoPos + 1 < videos.length) {
    	    $(clicktoexplain).show();
 	    hideMarkers();
 	    $(videoplayer).hide();
