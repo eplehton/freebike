@@ -392,6 +392,8 @@ function startNextClip() {
 		console.log("vplayer.src", vplayer.src);
 		vplayer.play();
 		
+		$("#currentvideo").html(vplayer.src);
+
 		console.log(query_id, query.items, 'stop_time*1000', query.stop_time * 1000);
 		
 		setTimeout(function() { showQuery(query); }, query.stop_time * 1000);

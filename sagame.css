@@ -180,3 +180,12 @@ body {
 	        box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2) inset;
 	color: #fff;
 }
+
+
+#currentvideo {
+	position: absolute;
+	width: 10em;
+	height: 3em;
+	bottom: 1em;
+	color: white;
+}

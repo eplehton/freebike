@@ -257,9 +257,11 @@ function setupInteraction() {
             var practice = clipData.practice;
             
             shuffleArray(experiment); // random order
-            
-            videos = practice.concat(experiment);
-            
+            if (practice.length > 0) {
+                videos = practice.concat(experiment);
+            } else { 
+	         videos = experiment;
+	    }
             $(loadreg).show();
             $(loadexp).show();
             };
