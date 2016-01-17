@@ -465,13 +465,15 @@ function startNextClip() {
         $("#videoplayer").off("resize");
         $("#videoplayer").resize( function() { showMarkers(); });
         $("#videoplayer").fadeIn(600, showMarkers);
-
-        
         
 		setTimeout(function() { 
             showQuery(query); 
             $("#videoplayer")[0].pause(); }, 
             query.stop_time * 1000);
+
+            
+		$("#currentvideo").html(vplayer.src);
+
 	} else {
 		alert("Done!");
 	}

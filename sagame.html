@@ -18,7 +18,7 @@
     <script language="javascript" type="text/javascript" src="js/markerlib.js"></script>
     <script language="javascript" type="text/javascript" src="js/sagame.js"></script>
 	<script language="javascript" type="text/javascript">
-		loadTargetsFrom('js/sagame_targets_20151202.json');
+		loadTargetsFrom('js/sagame_targets_20160113.json');
 		$(document).ready(function(){				
 			setupInteraction();
         });
@@ -43,11 +43,12 @@
     <div id="gameInstructions" class="instructions">
         
         <p>Tähän tulee ohjeet!</p>
-
-
-        <button id="startFirstVideoButton">Pelaa</button>
+    <button id="startFirstVideoButton">Pelaa</button>
     
     </div>
+
+    <div id="points"><p>0</p></div>
+    <div id="currentvideo">clip 123</div>
 
     <div class="target" id="target_template"></div>	
 
@@ -80,6 +81,7 @@
     <img id="marker2" src="media/marker2.png" />
     <img id="marker3" src="media/marker3.png" />
     <img id="marker4" src="media/marker4.png" />
+    
     
 </body>
 </html>
