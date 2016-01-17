@@ -1,4 +1,50 @@
 
+/*
+    Specify Dexie database
+*/
+var db = new Dexie("Freebike.SAGame");
+
+db.version(2).stores({
+    
+
+    answers: "++id, player_id, src, src_stop_time, query_id, box_id, query_started_realt, answer_latency, answer, target_id, target_type, target_x, target_y", 
+    markers: "++id,real_t,marker_id,top,left,width,height,video_left, video_right, video_top, video_bottom,[real_t+marker_id]",
+    expevent: "++id,player_id,session_id,src,event,t,real_t,[player_id+src]"
+});
+
+
+function Answer(player_id, src, src_stop_time, box_id, query_started_real_t, answer_latency, answer, target_id, target_type, target_x, target_y) {
+    /*
+	Answer class represent answers and related information.
+    */
+    this.player_id = player_id;
+    this.src = src;
+    this.src_stop_time = src_stop_time;
+    this.box_id = box_id;
+    this.query_started_real_t = query_started_real_t;
+    this.answer_latency = answer_latency;
+    this.answer = answer;
+    this.target_id = target_id;
+    this.target_type = target_type;
+    this.target_x = target_x;
+    this.targety = target_y;
+	
+}
+
+
+/* 
+    We specify how Marker.save function works in SA game. 
+*/
+Marker.prototype.save = function() {
+    db.markers.put(this)
+    .then( function(e) { console.log("Marker position saved." + this + " " + e);}  )
+    .catch( function(e) { console.log("Problems saving markers! " + e);} );
+}
+
+
+/*
+    Global variables for the game
+*/
 var local_storage_targets = "targets";
 var cached_targets = null;
 
@@ -24,7 +70,7 @@ function annoTargets2TestQuery(clipname, all_targets) {
 		alert("No targets with clipname: " + clipname);
 	}
 	
-	console.log(clipname)
+	//console.log(clipname)
     
 	var stop_time = cur_trgs[0].t.slice(-1).pop();
 		
@@ -42,7 +88,7 @@ function annoTargets2TestQuery(clipname, all_targets) {
 		}
 		
 	}
-	console.log('query', query);
+	//console.log('query', query);
 	
 	return query;
 }
@@ -139,6 +185,8 @@ function confirmAnswers() {
         $(points)[0].innerHTML = '<p>' + pointCounter + '</p>';
 	}
 	
+    
+    $("#videoMask").hide();
 	$("#checkbutton").hide();
 	$("#nextbutton").show();
 	
@@ -165,9 +213,9 @@ function loadQueries() {
     }	
     
     
-    console.log(testset_num, clipsets);
+    //console.log(testset_num, clipsets);
 	var cliplist = clipsets[testset_num];
-	console.log('cliplist', cliplist);
+	//console.log('cliplist', cliplist);
 	
 	var test_queries = [];
 	
@@ -212,22 +260,22 @@ function proceedIfAllAnswered() {
 	}
 }
 	
-function registerIdentity(query_id, box_id, answer, query_started_realt) {
-	/*
-		Registers which object the query box represents.
-	*/
-	var player_id = sessionStorage.getItem("player_id");
-	var answer_latency = (Date.now() - query_started_realt) / 1000;
-	var answer = { player_id : player_id,
-				   query_id : query_id,
-				   query_started_realt : query_started_realt,
-				   answer_latency : answer_latency,
-				   answer : answer};
+//~ function registerIdentity(query_id, box_id, answer, query_started_realt) {
+	//~ /*
+		//~ Registers which object the query box represents.
+	//~ */
+	//~ var player_id = sessionStorage.getItem("player_id");
+	//~ var answer_latency = (Date.now() - query_started_realt) / 1000;
+	//~ var answer = { player_id : player_id,
+				   //~ query_id : query_id,
+				   //~ query_started_realt : query_started_realt,
+				   //~ answer_latency : answer_latency,
+				   //~ answer : answer};
 				   
-	test_answers.push(answer);
+	//~ test_answers.push(answer);
 	
-	proceedIfAllAnswered();
-}
+	//~ proceedIfAllAnswered();
+//~ }
 
 
 function registerPresence(query, query_id, box_id, answer, query_started_realt) {
@@ -248,28 +296,32 @@ function registerPresence(query, query_id, box_id, answer, query_started_realt) 
 				   answer_latency : answer_latency,
 				   answer : answer,
 				   target_id :  query_items[box_id].target_id,
-		           type : query_items[box_id].type,
+		           target_typetype : query_items[box_id].type,
 				   target_x : query_items[box_id].x,
 		           target_y : query_items[box_id].y};
 				   
 	test_answers.push(answer);
 }
 
-function rel2Client(videoplayer, relx, rely) {
-	/*
-		Converts video relative coordinates to client coordinates.
-		Should this be in a common library?
-	*/
-    var x = relx * videoplayer.offsetWidth + videoplayer.offsetLeft
-    var y = rely * videoplayer.offsetHeight + videoplayer.offsetTop
-    return [x, y]
-}   
+
+//~ function rel2Client(videoplayer, relx, rely) {
+	//~ /*
+		//~ Converts video relative coordinates to client coordinates.
+		//~ Should this be in a common library?
+	//~ */
+    //~ var x = relx * videoplayer.offsetWidth + videoplayer.offsetLeft
+    //~ var y = rely * videoplayer.offsetHeight + videoplayer.offsetTop
+    //~ return [x, y]
+//~ } 
 
 
 function showQuery(query) {
-	var query_items = query.items;
+	console.log("showQuery called with:");
+    console.log(query);
+    console.log(query.items);
+    
+    var query_items = query.items;
 	
-	console.log("showQuery called");
 	
 	var vplayer = document.getElementById("videoplayer");
 	var nbutton = document.getElementById("nextbutton");
@@ -314,7 +366,7 @@ function showQuery(query) {
 		screen.appendChild(qbox);  
 		qbox.style.display = "block";
 		
-		var clientxy = rel2Client(vplayer, qitem.x, qitem.y);
+		var clientxy = videoToClient(vplayer, qitem.x, qitem.y);
 		var centering =	[qbox.offsetWidth * 0.5, qbox.offsetHeight * 0.5];
 		
 		
@@ -326,10 +378,26 @@ function showQuery(query) {
 
 	}
 
-	vplayer.style.display = "none";
-	
+	showVideoMask();
+    
 	$("#checkbutton").show();
 }
+
+function showVideoMask() {
+    $("#videoMask").show();
+    
+    
+    var tl = videoToClient($(videoplayer)[0], 0, 0);
+    var tr = videoToClient($(videoplayer)[0], 1, 0);
+    var bl = videoToClient($(videoplayer)[0], 0, 1);
+    var br = videoToClient($(videoplayer)[0], 1, 1);
+  
+    // markers are place outside the video screen
+    $("#videoMask").offset({top: tl[1], left: tl[0]});
+    $("#videoMask").width( tr[0] - tl[0] );
+    $("#videoMask").height( br[1] - tl[1] );
+}
+
 
 function saveTestAnswers() {
 	var answers_key = "trubike.test.answers";
@@ -342,7 +410,7 @@ function saveTestAnswers() {
 		local_answers = {};
 	}
 	
-	console.log("trubike.test.answers recovered from localStorage: ", local_answers);
+	// console.log("trubike.test.answers recovered from localStorage: ", local_answers);
 	
 	if (! local_answers.hasOwnProperty(player_id) )  {
 		local_answers[player_id] = [];
@@ -351,7 +419,7 @@ function saveTestAnswers() {
 	
 	local_answers[player_id].push(test_answers);
 	
-	console.log("local_answers with player_id ", local_answers[player_id]);
+	// console.log("local_answers with player_id ", local_answers[player_id]);
 	
 	localStorage.setItem(answers_key, JSON.stringify(local_answers));
 	
@@ -361,7 +429,8 @@ function saveTestAnswers() {
 
 
 function startNextClip() {
-	
+	console.log("startNextClip called");
+    
 	query_id += 1;
 	
 	if (query_id == 0) {
@@ -374,29 +443,37 @@ function startNextClip() {
 	
 	clearQueries();
 	
-	//var nbutton = document.getElementById("nextbutton");
-	//nbutton.style.display = "none";
 	
 	$("#nextbutton").hide();
 	
-	var vplayer = document.getElementById("videoplayer");
-	vplayer.style.display = "block";
-	
-	console.log('test_queries', test_queries);
+    
+	// console.log('test_queries', test_queries);
 	
 	if (query_id < test_queries.length) {
 		var query = test_queries[query_id];
 
-		
-		vplayer.src = clippath + query.clip
-		console.log("vplayer.src", vplayer.src);
-		vplayer.play();
-		
-		console.log(query_id, query.items, 'stop_time*1000', query.stop_time * 1000);
-		
-		setTimeout(function() { showQuery(query); }, query.stop_time * 1000);
+	    $("#videoplayer").hide();
+		$("#videoplayer")[0].src = clippath + query.clip
+
+		$("#videoplayer")[0].play();
+    
+        console.log("Playing " + $("#videoplayer")[0].src);
+        
+        // getting the markers positioned is tricky, because the video size changes	
+        // during the first 0-500 ms before calling play
+        // It is MUST to reposition the markers after the size has been set.
+        $("#videoplayer").off("resize");
+        $("#videoplayer").resize( function() { showMarkers(); });
+        $("#videoplayer").fadeIn(600, showMarkers);
+
+        
+        
+		setTimeout(function() { 
+            showQuery(query); 
+            $("#videoplayer")[0].pause(); }, 
+            query.stop_time * 1000);
 	} else {
-		document.location.href = "../index.html";
+		alert("Done!");
 	}
 }
 
@@ -444,8 +521,39 @@ function setQueryBoxStatus(qbox, status) {
 }
 
 
+
 function setupInteraction() {
 	
+    $(document).ready(function() {
+        $("#start").show(); 
+    });
+    
+    $("#startButton").click(function() {
+        var playerId = $("#playerId").val();
+        if (playerId != "") {
+            sessionStorage.setItem("player_id", playerId);
+            sessionStorage.setItem("Freebike.SAGame.session_id", Date.now());
+            
+            $("#start").hide();
+            $("#gameInstructions").show();
+        } else {
+            alert("Please give player id!");
+        }
+    });
+    
+    $("#startFirstVideoButton").click(function() {
+        $("#gameInstructions").hide();
+        startNextClip();
+    })
+
+    $("#nextbutton").click(function() {
+        startNextClip();
+    })
+
+    $("#checkbutton").click(function() {
+        confirmAnswers();
+    });
+    
 	 // Keypresses
 	$(document).keypress(function(event){
 		switch (event.which) {

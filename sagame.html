@@ -1,12 +1,21 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 	<meta charset="UTF-8">
 	<link type="text/css" rel="stylesheet" href="sagame.css" />
-	<title> Test </title>
-	
+	<title> Freebike game </title>
+
+    
+    <link href="http://fonts.googleapis.com/css?family=Indie+Flower" rel="stylesheet" type="text/css" />
+    
 	<script language="javascript" type="text/javascript" src="js/jquery-2.1.4.js"></script>
+    <script type="text/javascript" src="js/Dexie.min.js"></script>
+    <script language="javascript" type="text/javascript" src="js/FileSaver.js"></script>
+    
     <script language="javascript" type="text/javascript" src="js/sagame_clips.js"></script>
+    <script language="javascript" type="text/javascript" src="js/common.js"></script>
+    <script language="javascript" type="text/javascript" src="js/markerlib.js"></script>
     <script language="javascript" type="text/javascript" src="js/sagame.js"></script>
 	<script language="javascript" type="text/javascript">
 		loadTargetsFrom('js/sagame_targets_20151202.json');
@@ -19,17 +28,38 @@
 
 <body>
 
+    <div id="start" class="instructions">
+        
+        <p>
+        Player id <input id="playerId" type="text" value="" />
+        </p>
+        
+        <p>
+        <button id="startButton">Aloita!</button>
+        </p>
+
+    </div>
+
+    <div id="gameInstructions" class="instructions">
+        
+        <p>Tähän tulee ohjeet!</p>
+
+
+        <button id="startFirstVideoButton">Pelaa</button>
+    
+    </div>
+
     <div class="target" id="target_template"></div>	
 
     <div id="screen">
-
-    <div id="points"><p>0</p></div>
-
-    <video id="videoplayer" src="" muted></video> 
+        <div id="points"><p>0</p></div>
+        <video id="videoplayer" src="" muted></video> 
     </div>
 
-    <button id="checkbutton" onclick="confirmAnswers();">Tarkista</button> 
-    <button id="nextbutton" onclick="startNextClip();">Seuraava</button>
+    <div id="videoMask"></div>
+
+    <button id="checkbutton">Tarkista</button> 
+    <button id="nextbutton">Seuraava</button>
     
 	<div class="query_box" id="query_box_template"> 
 		<div class="query_box_target">
@@ -46,6 +76,10 @@
     <audio id="targethitplayer" src="media/targethit.mp3"></audio>
     <audio id="missplayer" src="media/188039__antumdeluge__bicycle-horn.wav"></audio>
     
+    <img id="marker1" src="media/marker1.png" />
+    <img id="marker2" src="media/marker2.png" />
+    <img id="marker3" src="media/marker3.png" />
+    <img id="marker4" src="media/marker4.png" />
     
 </body>
 </html>
