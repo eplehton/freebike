@@ -52,7 +52,7 @@ var cached_targets = null;
 var query_id = -1;
 var query_box_present_color = 'green';
 var query_started_realt = null; // global var which is used when registering not presence (should be something neater...)
-
+var showQueryTimeout = null;
 
 var test_answers = [];
 
@@ -453,10 +453,11 @@ function startNextClip() {
 		var query = test_queries[query_id];
 
 	    $("#videoplayer").hide();
-		$("#videoplayer")[0].src = clippath + query.clip
-
-		$("#videoplayer")[0].play();
-    
+ 
+		$("#videoplayer")[0].src = clippath + query.clip; 
+        
+        $("#currentvideo").html( query.clip.substring(0,3) );
+        
         console.log("Playing " + $("#videoplayer")[0].src);
         
         // getting the markers positioned is tricky, because the video size changes	
@@ -464,15 +465,42 @@ function startNextClip() {
         // It is MUST to reposition the markers after the size has been set.
         $("#videoplayer").off("resize");
         $("#videoplayer").resize( function() { showMarkers(); });
-        $("#videoplayer").fadeIn(600, showMarkers);
+        $("#videoplayer").fadeIn(500, showMarkers);
         
-		setTimeout(function() { 
+		$("#videoplayer")[0].play();
+        var src = $("#videoplayer")[0].src;
+        
+        $("#videoplayer").off("timeupdate");        
+        $("#videoplayer").bind('timeupdate', function() {
+            if ($("#videoplayer")[0].currentTime > query.stop_time) {
+                if (src != $("#videoplayer")[0].src) {
+                    console.log(src);
+                    console.log($("#videoplayer")[0].src);
+                    console.log("showQuery not called, because videoplayer has a different source! This should happen when jumping with a and z.");
+                    return;
+                }
+                
+                showQuery(query); 
+                $("#videoplayer")[0].pause();
+                console.log("Query stop time: "+ query.stop_time + " Video stopped: "+ $("#videoplayer")[0].currentTime);
+            }
+        });
+        
+        
+        /*
+        setTimeout(function() {
+            if (src != $("#videoplayer")[0].src) {
+                console.log(src);
+                console.log($("#videoplayer")[0].src);
+                console.log("showQuery not called, because videoplayer has a different source! This should happen when jumping with a and z.");
+                return;
+            }
             showQuery(query); 
-            $("#videoplayer")[0].pause(); }, 
+            $("#videoplayer")[0].pause(); 
+            console.log("Query stop time: "+ query.stop_time + " Video stopped: "+ $("#videoplayer")[0].currentTime);
+            }, 
             query.stop_time * 1000);
-
-            
-		$("#currentvideo").html(vplayer.src);
+        */
 
 	} else {
 		alert("Done!");
@@ -560,16 +588,11 @@ function setupInteraction() {
 	$(document).keypress(function(event){
 		switch (event.which) {
 			case "a".charCodeAt(0):
-				var cp = clipset_pos - 1;
-				videoEnded();
-				clipset_pos = cp;
-			
+                startNextClip();
 				break;
 			case "z".charCodeAt(0):
-				var cp = clipset_pos + 1;
-				videoEnded();
-				clipset_pos = cp;
-			
+                query_id -= 2;
+				startNextClip();
 				break;
 			case 'c'.charCodeAt(0):
 				var vplayer = document.getElementById("videoplayer");
