@@ -4,22 +4,21 @@
 */
 var db = new Dexie("Freebike.SAGame");
 
-db.version(2).stores({
+db.version(3).stores({
     
-
     answers: "++id, player_id, src, src_stop_time, query_id, box_id, query_started_realt, answer_latency, answer, target_id, target_type, target_x, target_y", 
     markers: "++id,real_t,marker_id,top,left,width,height,video_left, video_right, video_top, video_bottom,[real_t+marker_id]",
-    expevent: "++id,player_id,session_id,src,event,t,real_t,[player_id+src]"
 });
 
 
-function Answer(player_id, src, src_stop_time, box_id, query_started_real_t, answer_latency, answer, target_id, target_type, target_x, target_y) {
+function Answer(player_id, src, src_stop_time, query_id, box_id, query_started_real_t, answer_latency, answer, target_id, target_type, target_x, target_y) {
     /*
 	Answer class represent answers and related information.
     */
     this.player_id = player_id;
     this.src = src;
     this.src_stop_time = src_stop_time;
+    this.query_id = query_id;
     this.box_id = box_id;
     this.query_started_real_t = query_started_real_t;
     this.answer_latency = answer_latency;
@@ -27,8 +26,14 @@ function Answer(player_id, src, src_stop_time, box_id, query_started_real_t, ans
     this.target_id = target_id;
     this.target_type = target_type;
     this.target_x = target_x;
-    this.targety = target_y;
+    this.target_y = target_y;
 	
+}
+
+Answer.prototype.save = function() {
+    db.answers.put(this)
+    .then( function(e) { console.log("Answer saved." + this + " " + e);}  )
+    .catch( function(e) { console.log("Problems saving answer! " + e);} );
 }
 
 
@@ -40,6 +45,12 @@ Marker.prototype.save = function() {
     .then( function(e) { console.log("Marker position saved." + this + " " + e);}  )
     .catch( function(e) { console.log("Problems saving markers! " + e);} );
 }
+
+
+db.answers.mapToClass(Answer);
+db.markers.mapToClass(Marker);
+db.open();
+
 
 
 /*
@@ -54,11 +65,12 @@ var query_box_present_color = 'green';
 var query_started_realt = null; // global var which is used when registering not presence (should be something neater...)
 var showQueryTimeout = null;
 
-var test_answers = [];
+// var test_answers = [];
 
 var clippath = CLIPPATH; 
 
-var clipsets = CLIPSETS; 
+var currentVideoSet = null; // this is only to enable keyboard shortcuts!
+// var clipsets = CLIPSETS; 
 
 var pointCounter = 0;
 
@@ -103,7 +115,12 @@ function clearQueries() {
 		node.parentNode.removeChild(node);
 	}		
 	
-
+	var query_feedbacks = parent.getElementsByClassName("query_feedback");
+	for (var i=query_feedbacks.length; i--; i >= 0) {
+		var node = query_feedbacks.item(i);
+		node.parentNode.removeChild(node);
+	}    
+    
 }
 
 
@@ -119,6 +136,7 @@ function confirmAnswers() {
 		for (var box_id=0; box_id<query.items.length; box_id++) {
 			var qitem = query.items[box_id];
 			var query_box_id = "query_box_" + query_id + '_' + box_id;
+			var query_feedback_id = "query_feedback_" + query_id + '_' + box_id;
 			
 			var qbox = document.getElementById(query_box_id);
 			var status = getQueryBoxStatus(qbox);
@@ -143,8 +161,9 @@ function confirmAnswers() {
                 qbt.style.borderWidth = "3px";
                 qbt.innerHTML = "<p>-5</p>";
                 pointGain += -5;
-                
-                
+
+                $("#"+ query_feedback_id).html("Voi ei! Jäi huomaamatta!")
+                $("#"+ query_feedback_id).show();                
             }
             
             if ((qitem.type != 'nothing') && (status == 'present')){
@@ -154,6 +173,9 @@ function confirmAnswers() {
                 qbt.style.borderWidth = "3px";
                 qbt.innerHTML = "<p>+5</p>";
                 pointGain += 5;
+                
+                $("#"+ query_feedback_id).html("Hyvin havaittu!");
+                $("#"+ query_feedback_id).show();     
             } 
             
             if ((qitem.type == 'nothing') && (status == 'notpresent')){
@@ -163,7 +185,17 @@ function confirmAnswers() {
                 qbt.style.borderWidth = "3px";
                 qbt.innerHTML = "<p>+1</p>";
                 pointGain += 1;
+                
+                $("#"+query_feedback_id).html("Hyvä!<br/> Oli tyhjä etkä valinnut sitä.");
+                $("#"+query_feedback_id).show();     
             } 
+            
+            if ((qitem.type == 'nothing') && (status == 'present')){
+                var qbt = qbox.getElementsByClassName("query_box_target").item(0);
+                
+                $("#"+query_feedback_id).html("Tyhjä!<br/> Jos jätät valitsematta saat yhden pisteen.")
+                $("#"+query_feedback_id).show();
+            }             
             
 		}
         
@@ -194,6 +226,23 @@ function confirmAnswers() {
 }
 
 
+function downloadDexieTable(tableName) {
+    console.log("downloadDexieTable called " + tableName);
+    
+    db.table(tableName).toArray().then( function(rows) {
+        
+        var jsonStr = JSON.stringify(rows);
+        
+        console.log(jsonStr);
+        
+        var blob = new Blob([jsonStr], {type : "text/plain;charset=utf-8"});
+        saveAs(blob, tableName + ".json");
+    }).catch( function(e) { console.log("Error retrieving" + e); });
+    
+}
+
+
+
 function loadTargetsFrom(json_file) { 
     
     $.getJSON(json_file, function(data) {
@@ -204,7 +253,7 @@ function loadTargetsFrom(json_file) {
 
 
 
-function loadQueries() {
+function loadQueries(videoset) {
 	var all_targets = cached_targets;
 	
 	var testset_num = sessionStorage.getItem("testset_num");
@@ -212,11 +261,8 @@ function loadQueries() {
 		testset_num = 0;
     }	
     
+    var cliplist = videoset;
     
-    //console.log(testset_num, clipsets);
-	var cliplist = clipsets[testset_num];
-	//console.log('cliplist', cliplist);
-	
 	var test_queries = [];
 	
 	for (var i=0; i<cliplist.length; i++) {
@@ -287,7 +333,7 @@ function registerPresence(query, query_id, box_id, answer, query_started_realt) 
 	var player_id = sessionStorage.getItem("player_id");
 	var answer_latency = (Date.now() - query_started_realt) / 1000;
 	
-	var answer = { player_id : player_id,
+/* 	var answer = { player_id : player_id,
 				   src : query.clip,
 		           src_stop_time : query.stop_time,
 				   query_id : query_id,
@@ -300,7 +346,21 @@ function registerPresence(query, query_id, box_id, answer, query_started_realt) 
 				   target_x : query_items[box_id].x,
 		           target_y : query_items[box_id].y};
 				   
-	test_answers.push(answer);
+	test_answers.push(answer); */
+    
+    var ansObj = new Answer(player_id, 
+                            query.clip, 
+                            query.stop_time, 
+                            query_id,
+                            box_id, 
+                            query_started_realt, 
+                            answer_latency, 
+                            answer, 
+                            query_items[box_id].target_id, 
+                            query_items[box_id].type, 
+                            query_items[box_id].x, 
+                            query_items[box_id].y);
+    ansObj.save();
 }
 
 
@@ -329,6 +389,7 @@ function showQuery(query) {
 
 	
 	var qbt = document.getElementById("query_box_template");
+	var queryFeedbackTmpl = document.getElementById("query_feedback_template");
 
 	
 	vplayer.pause();
@@ -338,11 +399,11 @@ function showQuery(query) {
 		
 	for (var box_id=0; box_id<query_items.length; box_id++) {
 		var query_box_id = "query_box_" + query_id + '_' + box_id;
-
 		var qbox = qbt.cloneNode(true);
 		qbox.id = query_box_id;
 
-
+        
+        
 		var qitem = query_items[box_id];
 		
 
@@ -359,12 +420,21 @@ function showQuery(query) {
                                 }
 							    registerPresence(query, q_id, b_id, status, query_started_realt); } 
 		}
-		
-		
 		qbox.addEventListener("click", makeCallbackTB(qitem, query_id, box_id), false);
 
+
+   		var query_feedback_id = "query_feedback_" + query_id + '_' + box_id;        
+        var qfeedback = queryFeedbackTmpl.cloneNode(true);
+        qfeedback.id = query_feedback_id;        
+        qfeedback.innerHTML = "<p>"+ qitem.type + "</p>";
+
+        
+        
 		screen.appendChild(qbox);  
+		screen.appendChild(qfeedback);  
+        
 		qbox.style.display = "block";
+		qfeedback.style.display = "none";
 		
 		var clientxy = videoToClient(vplayer, qitem.x, qitem.y);
 		var centering =	[qbox.offsetWidth * 0.5, qbox.offsetHeight * 0.5];
@@ -373,6 +443,8 @@ function showQuery(query) {
 		qbox.style.top = (clientxy[1] - centering[1]) + "px"; 
 		qbox.style.left = (clientxy[0] - centering[0]) + "px";
 		
+		qfeedback.style.top = (clientxy[1] - centering[1] - 100) + "px"; 
+		qfeedback.style.left = (clientxy[0] - centering[0]) + "px";
 		
 		
 
@@ -399,114 +471,132 @@ function showVideoMask() {
 }
 
 
-function saveTestAnswers() {
-	var answers_key = "trubike.test.answers";
-	
-	var player_id = sessionStorage.getItem("player_id");
-	var local_answers_str = localStorage.getItem(answers_key);
-
-	var local_answers = JSON.parse(local_answers_str);
-	if (local_answers === null) {
-		local_answers = {};
-	}
-	
-	// console.log("trubike.test.answers recovered from localStorage: ", local_answers);
-	
-	if (! local_answers.hasOwnProperty(player_id) )  {
-		local_answers[player_id] = [];
-	}
-	
-	
-	local_answers[player_id].push(test_answers);
-	
-	// console.log("local_answers with player_id ", local_answers[player_id]);
-	
-	localStorage.setItem(answers_key, JSON.stringify(local_answers));
-	
-	
-}
+/* function saveTestAnswers() {
+ * 	var answers_key = "trubike.test.answers";
+ * 	
+ * 	var player_id = sessionStorage.getItem("player_id");
+ * 	var local_answers_str = localStorage.getItem(answers_key);
+ * 
+ * 	var local_answers = JSON.parse(local_answers_str);
+ * 	if (local_answers === null) {
+ * 		local_answers = {};
+ * 	}
+ * 	
+ * 	// console.log("trubike.test.answers recovered from localStorage: ", local_answers);
+ * 	
+ * 	if (! local_answers.hasOwnProperty(player_id) )  {
+ * 		local_answers[player_id] = [];
+ * 	}
+ * 	
+ * 	
+ * 	local_answers[player_id].push(test_answers);
+ * 	
+ * 	// console.log("local_answers with player_id ", local_answers[player_id]);
+ * 	
+ * 	localStorage.setItem(answers_key, JSON.stringify(local_answers));
+ * 	
+ * 	
+ * }
+ */
 	 
 
 
-function startNextClip() {
+function startGame(query_id, videoset) {
+    
 	console.log("startNextClip called");
     
-	query_id += 1;
-	
-	if (query_id == 0) {
-		test_queries = loadQueries();
-	}
-	
-	
-	saveTestAnswers();
-	test_answers = []; // clear it, so that is wont be duplicated
-	
-	clearQueries();
-	
-	
-	$("#nextbutton").hide();
-	
-    
-	// console.log('test_queries', test_queries);
-	
-	if (query_id < test_queries.length) {
-		var query = test_queries[query_id];
+    function prepare() {
+        hideMarkers();
+        $("#nextbutton").hide();
+        
+        clearQueries();
 
-	    $("#videoplayer").hide();
- 
-		$("#videoplayer")[0].src = clippath + query.clip; 
+        $("#videoMask").show();
         
-        $("#currentvideo").html( query.clip.substring(0,3) );
+        //saveTestAnswers();
+        //test_answers = []; // clear it, so that is wont be duplicated
+    }
+    
+    function run() {
+        $("#videoMask").show();
         
-        console.log("Playing " + $("#videoplayer")[0].src);
         
-        // getting the markers positioned is tricky, because the video size changes	
-        // during the first 0-500 ms before calling play
-        // It is MUST to reposition the markers after the size has been set.
-        $("#videoplayer").off("resize");
-        $("#videoplayer").resize( function() { showMarkers(); });
-        $("#videoplayer").fadeIn(500, showMarkers);
+        // console.log('test_queries', test_queries);
         
-		$("#videoplayer")[0].play();
-        var src = $("#videoplayer")[0].src;
-        
-        $("#videoplayer").off("timeupdate");        
-        $("#videoplayer").bind('timeupdate', function() {
-            if ($("#videoplayer")[0].currentTime > query.stop_time) {
+        if (query_id < test_queries.length) {
+            var query = test_queries[query_id];
+
+
+            $("#videoplayer").hide();
+            
+            $("#videoplayer")[0].src = clippath + query.clip; 
+            
+            $("#currentvideo").html( query.clip.substring(0,3) );
+            
+            console.log("Playing " + $("#videoplayer")[0].src);
+            
+            // getting the markers positioned is tricky, because the video size changes	
+            // during the first 0-500 ms before calling play
+            // It is MUST to reposition the markers after the size has been set.
+            $("#videoplayer").off("resize");
+            //$("#videoplayer").resize( function() { showMarkers(); });
+            
+            //$("#videoplayer").fadeIn(500, showMarkers);
+            $("#videoplayer").show();
+            $("#videoMask").fadeOut(500, showMarkers);
+            
+            
+            $("#videoplayer")[0].play();
+            showMarkers(); // show the markers now, so that we get the surface enter to the camera approx. when the video starts playing
+            
+            var src = $("#videoplayer")[0].src;
+            
+            $("#videoplayer").off("timeupdate");        
+            $("#videoplayer").bind('timeupdate', function() {
+                if ($("#videoplayer")[0].currentTime > query.stop_time) {
+                    if (src != $("#videoplayer")[0].src) {
+                        console.log(src);
+                        console.log($("#videoplayer")[0].src);
+                        console.log("showQuery not called, because videoplayer has a different source! This should happen when jumping with a and z.");
+                        return;
+                    }
+                    
+                    showQuery(query); 
+                    $("#videoplayer")[0].pause();
+                    console.log("Query stop time: "+ query.stop_time + " Video stopped: "+ $("#videoplayer")[0].currentTime);
+                }
+            });
+            
+            
+            /*
+            setTimeout(function() {
                 if (src != $("#videoplayer")[0].src) {
                     console.log(src);
                     console.log($("#videoplayer")[0].src);
                     console.log("showQuery not called, because videoplayer has a different source! This should happen when jumping with a and z.");
                     return;
                 }
-                
                 showQuery(query); 
-                $("#videoplayer")[0].pause();
+                $("#videoplayer")[0].pause(); 
                 console.log("Query stop time: "+ query.stop_time + " Video stopped: "+ $("#videoplayer")[0].currentTime);
-            }
-        });
-        
-        
-        /*
-        setTimeout(function() {
-            if (src != $("#videoplayer")[0].src) {
-                console.log(src);
-                console.log($("#videoplayer")[0].src);
-                console.log("showQuery not called, because videoplayer has a different source! This should happen when jumping with a and z.");
-                return;
-            }
-            showQuery(query); 
-            $("#videoplayer")[0].pause(); 
-            console.log("Query stop time: "+ query.stop_time + " Video stopped: "+ $("#videoplayer")[0].currentTime);
-            }, 
-            query.stop_time * 1000);
-        */
+                }, 
+                query.stop_time * 1000);
+            */
 
-	} else {
-		alert("Done!");
-	}
+        } else {
+            alert("Done!");
+        }
+    }
+    
+    //query_id += 1;
+    if (query_id == 0) {
+        test_queries = loadQueries(videoset);
+    }
+
+    prepare();
+    setTimeout( run, 500);
+    
 }
-
 
 function toggleQueryBox(query_id, box_id) {
 	var query_box_id = "query_box_" + query_id + '_' + box_id;
@@ -565,46 +655,119 @@ function setupInteraction() {
             sessionStorage.setItem("Freebike.SAGame.session_id", Date.now());
             
             $("#start").hide();
-            $("#gameInstructions").show();
+            $("#practiceInstructions").show();
         } else {
             alert("Please give player id!");
         }
     });
     
-    $("#startFirstVideoButton").click(function() {
+    $("#startPractice").click(function() {
+        $("#practiceInstructions").hide();
+        
+        var practiceSet = CLIPSETS.practice;
+        currentVideoSet = practiceSet; // this is only to enable keyboard shortcuts!
+        
+        query_id = 0;
+        startGame(query_id, practiceSet)
+    
+        $("#nextbutton").off("click");
+        $("#nextbutton").click(function() {
+        
+            query_id += 1;
+            if (query_id < practiceSet.length) {
+                startGame(query_id, practiceSet);
+            } else {
+                $("#gameInstructions").show();
+            }
+        })
+        
+    })
+    
+    $("#startGame").click(function() {
         $("#gameInstructions").hide();
-        startNextClip();
-    })
+        
+        var queriesBeforeCalibration = 10;
+        
+        var videoSet = CLIPSETS.game[0];
+        currentVideoSet = videoSet; // this is only to enable keyboard shortcuts!
+        shuffleArray(videoSet);
+        
+        function nextClip() {
+            queriesBeforeCalibration -= 1;
+            query_id += 1;
+            if (query_id < videoSet.length) {
+                startGame(query_id, videoSet);
+            } else {
+                alert("Done!");
+            }
+        }
+        
+        $("#nextbutton").off("click"); 
+        $("#nextbutton").click(function() {
+            if (queriesBeforeCalibration == 0) { 
+                $("#calibrationInstruction").show();
+                
+                // delay the activation of click to proceed
+                setTimeout( function() {
+                    $("#calibrationInstruction").click( function(event) {
+                        $("#calibrationInstruction").hide();
+                        queriesBeforeCalibration = 10;
+                        nextClip();
+                        $("#calibrationInstruction").off("click");
+                    });}, 3000);
+                    
 
-    $("#nextbutton").click(function() {
-        startNextClip();
-    })
-
+        
+            } else {
+                nextClip();
+            }
+        })
+        
+        
+        query_id = -1;
+        nextClip();
+       
+    });
+    
     $("#checkbutton").click(function() {
         confirmAnswers();
     });
+    
     
 	 // Keypresses
 	$(document).keypress(function(event){
 		switch (event.which) {
 			case "a".charCodeAt(0):
-                startNextClip();
+                
+                query_id += 1;
+                startGame(query_id, currentVideoSet);
 				break;
 			case "z".charCodeAt(0):
-                query_id -= 2;
-				startNextClip();
+                
+                query_id -= 2;;
+                startGame(query_id, currentVideoSet);
 				break;
+            
 			case 'c'.charCodeAt(0):
-				var vplayer = document.getElementById("videoplayer");
+				var mask = $("#videoMask")[0];
 				
-				if (vplayer.style.display == "block") {	
-					vplayer.style.display = 'none';
+				if (mask.style.display == "block") {	
+					mask.style.display = 'none';
 				} else {
-					vplayer.style.display = 'block';
+					mask.style.display = 'block';
 				}
 				break;
 		}
 	});
 	
+    $("#downloadanswers").click( function() {
+        downloadDexieTable("answers");
+    });
+       
+    $("#downloadmarkers").click( function() {
+        downloadDexieTable("markers");
+    });    
+    
+
 }
 	

@@ -99,30 +99,30 @@ body {
 	z-index: 20;
 	background-color: transparent;
 	
-	
 }
+
 
 .query_box_target {
 	font-size: 80px;
 	font-family: sans;
-	font-color: white;
+	color: white;
 	vertical-align: middle;
 	text-align: center;
 	
-	width: 200px;
-	height: 200px;
+	width: 250px;
+	height: 250px;
 	border-style: solid;
 	border-width: 2px;
 	border-color: black;
-    
+ 
+	border-radius: 50%;
+
 	background-color: transparent;
 }
 
 .query_box_buttons {
 	display: none; /* not in use */
-	text-align: center;
-
-	
+	text-align: center;	
 }
 
 .query_box_item {
@@ -135,6 +135,18 @@ body {
 	height: 3ex;
 
 }
+
+.query_feedback {
+	display: none;
+	position: absolute;
+	z-index: 15;
+	background-color: white;
+	
+	width: 250px;
+	height: 3ex;
+
+}
+
 
 
 #checkbutton {
@@ -207,7 +219,7 @@ body {
 
 
 .instructions {
-    z-index: 10;
+    z-index: 50;
     display: none;
     position: absolute;
     top: 2%;    
@@ -225,6 +237,9 @@ body {
 	border-radius: 5ex;
 }
 
+#pleasePrepareInstructions {
+	background-color: #554;
+}
 
 
 #marker1 {
