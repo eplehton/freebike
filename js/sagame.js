@@ -585,9 +585,9 @@ function startGame(query_id, videoset) {
                     PERF_video_pause_called = Date.now();
                                 
 
-                    console.log("video play: " + PERF_video_play_called 
+                    /*console.log("video play: " + PERF_video_play_called 
                         + " video paused: "+ PERF_video_pause_called 
-                        + " duration: " + (PERF_video_pause_called - PERF_video_play_called)); 
+                        + " duration: " + (PERF_video_pause_called - PERF_video_play_called)); */
                     var latency = $("#videoplayer")[0].currentTime - query.stop_time;
                     console.log("Stop time: "+ query.stop_time + " Video stopped: "+ $("#videoplayer")[0].currentTime + " latency: "+ latency);
                     }, 
@@ -744,7 +744,7 @@ function setupInteraction() {
     $("#startGame").click(function() {
         $("#gameInstructions").hide();
         
-        var calibInterval = 15;
+        var calibInterval = 16;
         var queriesBeforeCalibration = calibInterval;
         
         var videoSet = CLIPSETS.game[0];
@@ -768,12 +768,12 @@ function setupInteraction() {
                 
                 // delay the activation of click to proceed
                 setTimeout( function() {
-                    $("#calibrationInstruction").click( function(event) {
+                    $("#calibrationInstructionContinue").click( function(event) {
                         $("#calibrationInstruction").hide();
                         queriesBeforeCalibration = calibInterval;
                         nextClip();
-                        $("#calibrationInstruction").off("click");
-                    });}, 3000);
+                        $("#calibrationInstructionContinue").off("click");
+                    });}, 5000);
                     
 
         
