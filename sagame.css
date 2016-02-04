@@ -311,7 +311,7 @@ button {
 	width: 10em;
 	height: 1ex;
 	bottom: 2ex;
-	color: white;
+	color: grey;
 	font-size: x-large;
 	z-index: 30;
 }
