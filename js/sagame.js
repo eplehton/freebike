@@ -4,10 +4,11 @@
 */
 var db = new Dexie("Freebike.SAGame");
 
-db.version(3).stores({
+db.version(5).stores({
     
     answers: "++id, player_id, src, src_stop_time, query_id, box_id, query_started_realt, answer_latency, answer, target_id, target_type, target_x, target_y", 
     markers: "++id,real_t,marker_id,top,left,width,height,video_left, video_right, video_top, video_bottom,[real_t+marker_id]",
+    expevents: "++id,player_id,session_id,src,event,t,real_t,[player_id+src]"
 });
 
 
@@ -30,9 +31,23 @@ function Answer(player_id, src, src_stop_time, query_id, box_id, query_started_r
 	
 }
 
+function ExpEvent(src, event, t) {
+    this.player_id = sessionStorage.getItem("player_id");
+    this.session_id = sessionStorage.getItem("session_id");
+    
+    this.src = src;
+    this.t = t;
+    this.real_t = Date.now();
+    this.event = event;
+
+}
+
+
 Answer.prototype.save = function() {
     db.answers.put(this)
-    .then( function(e) { console.log("Answer saved." + this + " " + e);}  )
+    .then( function(e) { 
+        //console.log("Answer saved." + this + " " + e);
+        })
     .catch( function(e) { console.log("Problems saving answer! " + e);} );
 }
 
@@ -42,13 +57,26 @@ Answer.prototype.save = function() {
 */
 Marker.prototype.save = function() {
     db.markers.put(this)
-    .then( function(e) { console.log("Marker position saved." + this + " " + e);}  )
+    .then( function(e) { 
+        // console.log("Marker position saved." + this + " " + e);
+        })
     .catch( function(e) { console.log("Problems saving markers! " + e);} );
 }
+
+ExpEvent.prototype.save = function() {
+    db.expevents.put(this)
+    .then( function(e) { 
+        // console.log("ExpEvent saved." + this + " " + e);
+        })
+    .catch( function(e) { console.log("Problems saving ExpEvent! " + e);} );
+}
+
+
 
 
 db.answers.mapToClass(Answer);
 db.markers.mapToClass(Marker);
+db.expevents.mapToClass(ExpEvent);
 db.open();
 
 
@@ -136,6 +164,7 @@ function confirmAnswers() {
     
     var had_miss = false;
     var pointGain = 0;
+
     
     for (var box_id=0; box_id<query.items.length; box_id++) {
         var qitem = query.items[box_id];
@@ -145,7 +174,7 @@ function confirmAnswers() {
         var qbox = document.getElementById(query_box_id);
         var status = getQueryBoxStatus(qbox);
         if (status == 'notpresent') {
-        
+            // we register the status of all the notpresents here
             registerPresence(query, query_id, box_id, "notpresent", query_started_realt);
         }
         
@@ -411,7 +440,7 @@ function showQuery(query) {
 	console.log("showQuery called with:");
     console.log(query);
     console.log(query.items);
-    
+
     
     var query_items = query.items;
 	RAI_qi = query_items;
@@ -426,8 +455,10 @@ function showQuery(query) {
 
 	
 	vplayer.pause();
-	
-	query_started_realt = Date.now();
+    query_started_realt = Date.now();
+	var ev = new ExpEvent(vplayer.src, 'queryStarted', vplayer.currentTime);
+    ev.save();
+    
 	
 		
 	for (var box_id=0; box_id<query_items.length; box_id++) {
@@ -535,7 +566,7 @@ function showVideoMask() {
 
 function startGame(query_id, videoset) {
     
-	console.log("startNextClip called");
+	console.log("startGame called");
     
     function prepare() {
         hideMarkers();
@@ -568,7 +599,18 @@ function startGame(query_id, videoset) {
             
             $("#videoplayer").off("playing");              
             $("#videoplayer").bind('playing', function() {
-                if (showQueryTimeout != 0) { return; }
+                // Called once after the video has started playing.
+                // There is a short latency (100-200 ms) before the video really starts 
+                // playing after calling play. Therefore it is better to wait until the first
+                // playing event before setting the timeout. 
+                
+                // If the timeout is already set, just remove the binding and do nothing.
+                // Note that it is not enough to off-bind the event on the first call: The
+                // event may be able to fire again before the binding is removed, which leads to
+                // double queries to be shown.
+                if (showQueryTimeout != 0) { 
+                    $("#videoplayer").off("playing");              
+                    return; }
                 
                 
                 showQueryTimeout = setTimeout(function() {
@@ -592,6 +634,12 @@ function startGame(query_id, videoset) {
                     console.log("Stop time: "+ query.stop_time + " Video stopped: "+ $("#videoplayer")[0].currentTime + " latency: "+ latency);
                     }, 
                     query.stop_time * 1000);
+                
+                // save the start
+                var ev = new ExpEvent($("#videoplayer")[0].src, 'videoPlaying', $("#videoplayer")[0].currentTime);
+                ev.save();
+        
+                    
                 });
         
             
@@ -606,10 +654,12 @@ function startGame(query_id, videoset) {
             
             
             $("#videoplayer")[0].play();
-            
+            showMarkers(); // show the markers now, so that we get the surface enter to the camera approx. when the video starts playing
             PERF_video_play_called = Date.now();
             
-            showMarkers(); // show the markers now, so that we get the surface enter to the camera approx. when the video starts playing
+            
+                
+            
             
             
             /*
@@ -763,6 +813,10 @@ function setupInteraction() {
         
         $("#nextbutton").off("click"); 
         $("#nextbutton").click(function() {
+            var ev = new ExpEvent($("#videoplayer")[0].src, 'nextPressed', -1);
+            ev.save();
+        
+            
             if (queriesBeforeCalibration == 0) { 
                 $("#calibrationInstruction").show();
                 
@@ -789,6 +843,9 @@ function setupInteraction() {
     });
     
     $("#checkbutton").click(function() {
+        var ev = new ExpEvent($("#videoplayer")[0].src, 'checkAnswersPressed', -1);
+        ev.save();
+        
         confirmAnswers();
     });
     
@@ -827,6 +884,9 @@ function setupInteraction() {
         downloadDexieTable("markers");
     });    
     
+    $("#downloadevents").click( function() {
+        downloadDexieTable("expevents");
+    });    
 
 }
 	
