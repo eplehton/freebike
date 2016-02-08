@@ -49,11 +49,19 @@ function showMarkers() {
     var bl = videoToClient($(videoplayer)[0], 0, 1);
     var br = videoToClient($(videoplayer)[0], 1, 1);
   
-    // markers are place outside the video screen
+    /* // markers are placed outside the video screen
     $("#marker1").offset({top: tl[1] - 0 * $("#marker1").height(), left: tl[0] - $("#marker1").width()});
     $("#marker2").offset({top: tr[1] - 0 * $("#marker2").height(), left: tr[0]});
     $("#marker3").offset({top: bl[1] - 1 * $("#marker3").height(), left: bl[0] - $("#marker3").width()});
     $("#marker4").offset({top: br[1] - 1 * $("#marker4").height(), left: br[0]});
+    */
+    
+    // markers are placed inside the video screen
+    $("#marker1").offset({top: tl[1] - 0 * $("#marker1").height(), left: tl[0]});
+    $("#marker2").offset({top: tr[1] - 0 * $("#marker2").height(), left: tr[0] - $("#marker2").width()});
+    $("#marker3").offset({top: bl[1] - 1 * $("#marker3").height(), left: bl[0] });
+    $("#marker4").offset({top: br[1] - 1 * $("#marker4").height(), left: br[0] - $("#marker4").width()});
+    
     
     // save positions
     var real_t = Date.now();
