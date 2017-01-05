@@ -18,13 +18,18 @@
         /* float:left; */
     }
 
-    #targetlist{
-		
-        background-color: #fff;
+    #targetlist {
+		background-color: #fff;
         width: 30%;
 		float: right;
     }
-    
+	
+	.targetPointTable {
+		font-size: xx-small;
+		border-spacing: 5ex 1ex;
+		
+	}
+
     #videocontrols {
         /*clear: both;*/
     }

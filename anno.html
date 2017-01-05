@@ -18,11 +18,12 @@
 	Path: <input id="clippath" type="text" size=20 value="videos/" />
     File: <input id="videosrc" type="file"/>
 	
-    <button onclick="guiSaveTargets();">Save targets</button> 
+
     <button onclick='$("#options").show()'>Options</button>
 </div>
 
 <div id="options"> 
+    <p><button onclick="guiSaveTargets();">Save targets</button></p> 
     <p>Load targets: <input id="targetssrc" type="file" /></p>
     <p>Load shots: <input id="shotssrc" type="file" /></p>
     <p><button onclick='$("#options").hide()'>Close</button></p>
@@ -43,7 +44,7 @@
 			<button onclick="playPauseVideo()">Play/Pause (s)</button>
 			<button onclick="playVideo(1.0)">&#9658; 1/1 (z)</button>
 			<button onclick="playVideo(0.5)">&#9658; 1/2 (x)</button>
-			<button onclick="playVideo(0.5)">&#9658; 1/4 (c)</button>
+			<button onclick="playVideo(0.25)">&#9658; 1/4 (c)</button>
 			
 			
 			<br />

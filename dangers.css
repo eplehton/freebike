@@ -140,3 +140,10 @@ body {
 	bottom: 1em;
 	color: grey;
 }
+
+
+#videocontrols {
+	position: absolute;
+	display; none;
+	
+}

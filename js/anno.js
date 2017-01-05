@@ -42,11 +42,12 @@ var gui_append_mode;
 var CACHED_PLAYBACK_SHOTS = null;
 
 
-addTargetPoint = function(trg, x, y, t) {
+addTargetPoint = function(trg, x, y, t, w) {
     var loc = where(trg.t, t);
     trg.t.splice(loc, 0, t);
     trg.x.splice(loc, 0, x);
     trg.y.splice(loc, 0, y);
+    trg.width.splice(loc, 0, w);
     
     saveAnnoTargets();
     
@@ -55,7 +56,8 @@ addTargetPoint = function(trg, x, y, t) {
 delTargetPoint = function(trg, loc) {
     trg.x.splice(loc, 1);
     trg.y.splice(loc, 1);
-    trg.t.splice(loc, 1);    
+    trg.t.splice(loc, 1);
+    trg.width.splice(loc, 1);      
     saveAnnoTargets();
 }
 
@@ -134,6 +136,8 @@ function updateTargetIcon() {
     
     for (var i=0; i < src_trgs.length; i++) {
 
+        
+        
         // copy a new target icon if not enought icons
         if (! (i < anno_target_icons.length) ) {
             anno_target_icons[i] = target_icon_tmpl.cloneNode(true);
@@ -148,6 +152,7 @@ function updateTargetIcon() {
         
         var trg = src_trgs[i];
 
+        
         var ticon = anno_target_icons[i];
         
         // The problem: If you jump to the start time of a target, then the video player may actually get slightly smaller 
@@ -169,8 +174,8 @@ function updateTargetIcon() {
         
         if (do_display != 'no') { 
             
-            var ticon_width = vplayer.offsetWidth * trg.width;
-            var ticon_height = vplayer.offsetWidth * trg.width;
+            var ticon_width = vplayer.offsetWidth * trg.width[loc];
+            var ticon_height = vplayer.offsetWidth * trg.width[loc];
                     
             
             var videoCoords = videoToClient(vplayer, trg.x[loc], trg.y[loc]);
@@ -239,12 +244,41 @@ function updateTargetList() {
     for (var j=0; j<src_trgs.length; j++) {        
         if (current_anno_target != null && current_anno_target.id == src_trgs[j].id) {
             var trg = current_anno_target;
+            
+            
+            // 2016-03 hack
+            // convert old rel_width to width array
+            // convert old target_type to type
+            if (trg.width.constructor != Array) {
+                var old_value = trg.rel_width;
+                trg.width = new Array(trg.t.length).fill(old_value);
+            }
+            
+            // hack hack
+            if (trg.width[0] == undefined) {
+                trg.width[0] = 0.2;
+            }
+            
+            /*if (trg.width. == undefined) {
+                var old_value = trg.rel_width;
+                trg.width = new Array(trg.t.length).fill(old_value);
+            }
+            */
+            if (trg.type == undefined) {
+                trg.type = trg.target_type;
+            }
            
             html += '<p>';
-            html += 'Current target: ' + j + '<button onclick="delAnnoTarget('+ j +'); updateTargetList();">X</button>';
+            html += 'Current target: ' + j + '<button onclick="delAnnoTarget('+ j +'); updateTargetList();">Delete</button>';
             html += '</p>';
             
-            html +='Width: <input size="5" id="target_width" type="text" value="'+ trg.width +'" onchange="setCurrentAnnoTargetProperties();"/><br />'
+            var trg_w = 0.2;
+            if (trg.width.length > 0) {
+                trg_w = trg.width[trg.width.length-1];
+            }
+            html +='Width: <input size="5" id="target_width" type="text" value="'+ trg_w +'"/><br />'
+            
+            // " onchange="setCurrentAnnoTargetProperties();"
             
             function isSelected(option) {
                 if (option === current_anno_target.type) {
@@ -254,7 +288,16 @@ function updateTargetList() {
                 }
             }
             
+            var description = current_anno_target.description;
+            if (description == undefined) { description = ""; }
+            
+            html +='<textarea id="target_description" onchange="setCurrentAnnoTargetProperties();">'+ description +'</textarea>'
+            
+            
+            html +='<br/>'
             html +='<select id="target_type" onchange="setCurrentAnnoTargetProperties();">';
+            
+            
             html +='<option value="roaduser" '+ isSelected("road_user") + ' >1 Road user</option>';
             html +='<option value="roaduser_pedestrian" '+ isSelected("pedestrian") + ' >1.1 Pedestrian</option>';
             html +='<option value="roaduser_bicycle" '+ isSelected("bicycle") + ' >1.2. Bicycle</option>';
@@ -269,35 +312,82 @@ function updateTargetList() {
             
             html +='<option value="nothing" '+ isSelected("nothing") + ' >3 Empty</option>';
             
-            
             html +='<option value="other" '+ isSelected("other") + ' >4 Other</option>';
             
             html +='</select>';
             
             html += "<p>List of target points:</p>"
-            html += "<table>";
+            html += '<table class="targetPointTable">';
         
             // Show points
             console.log(trg);
             for (var i=0; i<trg.t.length; i++) {  
             
                 var t = trg.t[i].toPrecision(3);
-                var x =  trg.x[i].toPrecision(3);
+                var x = trg.x[i].toPrecision(3);
                 var y = trg.y[i].toPrecision(3);
-
-                var line = "".concat("<tr><td>",
-                                        (i+1) +'. <button onclick="seekVideo('+t+', false)">'+t+'</button>',
-                                        "</td><td>",
-                                        x,
-                                        "</td><td>",
-                                        y,
-                                        "</td><td>",
-                                        '<button onclick="delTargetPoint(anno_targets[' + j +'],'+ i +'); updateTargetList();">X</button>',
+                var w = 0.1;
+                if (trg.width[i] != undefined) {
+                    w = trg.width[i].toPrecision(2);
+                }
+                var line = "".concat('<tr><td>'+ (i+1) +'. <button class="targetPointTable" onclick="seekVideo('+t+', false)">'+t+'</button>', 
+                                        '<td>' + x + '</td>',
+                                        '<td>' + y + '</td>',
+                                        '<td><input type="text" class="targetPointTable" id="targetPointSize_'+ i +'" value="'+ w +'" onchange="setCurrentAnnoTargetProperties();"/>',
+                                        "<td>",
+                                        '<button class="targetPointTable" onclick="delTargetPoint(anno_targets[' + j +'],'+ i +'); updateTargetList();">X</button>',
                                         "</td></tr>");
                 html += line;
             }
                 
             html += "</table>"
+            
+            var c1_text = "";
+            var c1_checked = "";
+            var c2_text = "";
+            var c2_checked = "";
+            var c3_text = "";
+            var c3_checked = "";
+            
+            console.log(trg.multiple_choices);
+            
+            // I so need to make this with React or similar...
+            if (trg.multiple_choices != undefined) {
+                var mcs = trg.multiple_choices.slice();
+            
+                if (mcs.length > 0) {
+                    console.log("1");
+                    var c1 = mcs.splice(0, 1)[0];
+                    c1_text = c1[0];
+                    c1_checked = "";
+                    if (c1[1]) { c1_checked = 'checked'; }
+                }
+                if (mcs.length > 0) {
+                    console.log("2");
+                    var c2 = mcs.splice(0, 1)[0];
+                    c2_text = c2[0];                    
+                    c2_checked = "";
+                    if (c2[1]) { c2_checked = 'checked'; }
+                }
+                if (mcs.length > 0) {
+                    console.log("3");
+                    var c3 = mcs.splice(0, 1)[0];
+                    c3_text = c3[0];
+                    c3_checked = "";
+                    if (c3[1]) { c3_checked = 'checked'; }
+                }
+            }
+            
+            // multiple choices
+            html += '<p><input type="checkbox" '+ c1_checked +' onchange="setCurrentAnnoTargetProperties();" id="targetMultipleChoice1_Correct" />';
+            html += '<input type="text" onchange="setCurrentAnnoTargetProperties();" id="targetMultipleChoice1_Text" value="' + c1_text +'" /></p>';
+            
+            html += '<p><input type="checkbox" '+ c2_checked +' onchange="setCurrentAnnoTargetProperties();" id="targetMultipleChoice2_Correct" />';
+            html += '<input type="text" onchange="setCurrentAnnoTargetProperties();" id="targetMultipleChoice2_Text" value="' + c2_text +'" /></p>';
+            
+            html += '<p><input type="checkbox" '+ c3_checked +' onchange="setCurrentAnnoTargetProperties();" id="targetMultipleChoice3_Correct" />';
+            html += '<input type="text" onchange="setCurrentAnnoTargetProperties();" id="targetMultipleChoice3_Text" value="' + c3_text +'" /></p>';
+            
         }
     }
     
@@ -363,13 +453,41 @@ function saveAnnoTargets() {
 function setCurrentAnnoTargetProperties() {
     
     var type = document.getElementById("target_type").value;
+    
+    // save type
     current_anno_target.type = type;
     
+    // save description
+    current_anno_target.description = $("#target_description").val();
+
+    // save multiple choice
+    var tmc1_text = document.getElementById("targetMultipleChoice1_Text").value;
+    var tmc2_text = document.getElementById("targetMultipleChoice2_Text").value;
+    var tmc3_text = document.getElementById("targetMultipleChoice3_Text").value;
+    var tmc1_correct = document.getElementById("targetMultipleChoice1_Correct").checked;
+    var tmc2_correct = document.getElementById("targetMultipleChoice2_Correct").checked;
+    var tmc3_correct = document.getElementById("targetMultipleChoice3_Correct").checked;
     
-    var target_width = parseFloat(document.getElementById("target_width").value);
-    current_anno_target.width = target_width;
+
+    
+    var mcs = [];
+    if (tmc1_text != "") { mcs.push( [tmc1_text, tmc1_correct] ); }
+    if (tmc2_text != "") { mcs.push( [tmc2_text, tmc2_correct] ); }
+    if (tmc3_text != "") { mcs.push( [tmc3_text, tmc3_correct]); }
+    
+    current_anno_target.multiple_choices = mcs;
+    
+    // TODO: 
+    // hmm, this updates all the sizes to the same: it's ok with SA Game and when
+    // there is only a singel point, but otherwise it makes it impossible to have 
+    // variable width targets... 
+    for (i=0; i<current_anno_target.t.length; i++) {
+        var w = Number.parseFloat($("#targetPointSize_"+ i).val());
+        current_anno_target.width[i] = w;
+    }
     
     
+
     saveAnnoTargets();
 }
 
@@ -397,7 +515,10 @@ function videoClicked(ev) {
         if (current_anno_target == null) {
             createTarget();
         }
-        addTargetPoint(current_anno_target, x, y, ctime)
+        
+        var target_width = Number.parseFloat($("#target_width").val());
+        
+        addTargetPoint(current_anno_target, x, y, ctime, target_width)
         
         updateDisplay();
     }
@@ -489,10 +610,13 @@ $(document).ready(function(){
 
 
 
-    // Keypresses
+    //Keypresses
     $(document).keypress(function(event){	
-        //console.log("rairairai" + event.which + " " + "2".charCodeAt(0))
-        switch (event.which) {
+        if (event.keyCode == 9) {
+            playPauseVideo();
+        }
+        
+        /*switch (event.which) {
             case "a".charCodeAt(0):
                 seekVideo(-0.5, true);
                 break;
@@ -511,7 +635,8 @@ $(document).ready(function(){
             case "c".charCodeAt(0):
                 playVideo(1/4);
                 break;
-        }   
-    });
+           
+        }  */ 
+    })
     
 });

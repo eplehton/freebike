@@ -330,6 +330,13 @@ function setupInteraction() {
     });    
     
     
+    $("#loadvis").click( function() {
+        $("#start").hide();
+        
+        startVisualization(0);
+    });
+    
+    
     
     // Start the show
     
@@ -717,5 +724,93 @@ function queryDangers(dangers) {
     }
     // set it play and wait for the triggers
     $(videoplayer)[0].play();
+    
+}
+
+
+
+function startVisualization(videoPos) {
+    var videoSrc = "videos/" + videos[videoPos];
+    $(videoplayer)[0].src = videoSrc;
+	
+    // make sure there is no click actions left
+    $(videoplayer).off("click"); 
+
+    // load the targets for the video
+    // and start the queryDangers function
+        
+        
+    $(videoplayer).off("resize");
+    
+    $(videoplayer).off("play");
+    $(videoplayer).off("pause");
+    
+    $(videoplayer).off("ended");
+    $(videoplayer).on("ended", function(ev) {
+        
+        if (videoPos + 1 < videos.length) {
+            
+            // edit this
+        } else {
+            $(start).show();
+            $(videoplayer).hide();
+        }
+    });
+    
+    
+    $("#videocontrols").show();
+    //$("#videocontrols")[0].style.top = "2%";
+    //$("#videocontrols")[0].style.left = "3%";
+    
+    $("#videoplayer")[0].controls = 1;
+    
+    var src = $(videoplayer)[0].src.split("/").pop();
+    db.dangers.where("src")
+        .equals(src).toArray()
+        .then( function(dangerArr) {
+            console.log("dangers found");
+            console.log(dangerArr);
+            dangers = dangerArr;
+            
+            $("#videoplayer")[0].play(); // edit
+            visualizeDangers(dangers);
+
+        });
+        
+}
+
+
+
+function visualizeDangers(dangers) {
+    console.log("Vis dangers");
+    console.log(dangers);
+    
+    function showDangerInTime(danger) {
+        
+        var dangerClick = showDangerClick(0, 0);
+        
+        $(videoplayer).on("timeupdate", function(ev) {
+                
+            if (Math.abs(ev.target.currentTime - danger.t) < 0.2) {
+                console.log("tu match");
+                var clientCrds = videoToClient($(videoplayer)[0], danger.x, danger.y);
+                    
+                    dangerClick.style.left = clientCrds[0] - (0.5 * dangerClick.offsetWidth)  + "px";
+                    dangerClick.style.top = clientCrds[1] - (0.5 * dangerClick.offsetHeight) + "px";
+                    dangerClick.style.opacity = 1.0;
+                
+            } else {
+               dangerClick.style.opacity = 0.0; 
+            }  
+        });
+    }
+    
+    
+    $(videoplayer).off("timeupdate");
+    for (var i in dangers) {
+        showDangerInTime(dangers[i]);
+    }
+    // set it play and wait for the triggers
+    //$(videoplayer)[0].play();
     
 }

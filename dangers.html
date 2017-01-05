@@ -61,6 +61,7 @@
 	<p>
         <button id="loadreg">First phase</button>
         <button id="loadexp">Second phase</button>
+        <button id="loadvis">Visualization</button>
         </p>
 		
 	<p>
@@ -146,5 +147,14 @@
     
     <audio id="pointedsound" src="media/Blop-Mark_DiAngelo-79054334.mp3"></audio>
     
-
+    <div id="videocontrols">    
+        Video position: <input id="videoposition" type="text" />
+        <button onclick="vc_pause">Play/Pause (s)</button>
+        <button onclick="playVideo(1.0)">&#9658; 1/1 (z)</button>
+        <button onclick="playVideo(0.5)">&#9658; 1/2 (x)</button>
+        <button onclick="playVideo(0.25)">&#9658; 1/4 (c)</button>
+        <button onclick="seekVideo(-0.5, true)">-500ms (a)</button>
+        <button onclick="seekVideo(0.5, true)">500ms (d)</button>
+    </div>
+	
 </body>

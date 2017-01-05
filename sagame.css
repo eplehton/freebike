@@ -316,3 +316,17 @@ button {
 	z-index: 30;
 }
 
+.query_multiple_choice {
+	position: absolute;
+	z-index: 20;
+	width: 50ex;
+	margin: 2ex;
+	display: block;
+	background-color: #77aaff;
+	border-radius: 2ex;
+	
+	text-align: left;
+	color: white;
+	font-size: large;
+}
+
