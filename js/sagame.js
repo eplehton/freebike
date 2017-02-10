@@ -138,7 +138,8 @@ function annoTargets2TestQuery(clipname, all_targets) {
 		} else {
 			
 			query.items.push( {target_id: ct.id, 
-                                type: ct.type, 
+                                type: ct.type,
+                                description: ct.description,
                                 x : ct.x.slice(-1).pop(), 
                                 y : ct.y.slice(-1).pop(),
                                 multiple_choices : ct.multiple_choices } ); 
@@ -294,6 +295,8 @@ function checkAnswersYesNo() {
         }
         
         
+        console.log(SAGAME.description);
+        
         if (status == 'present') {
             //var qbt = qbox.getElementsByClassName("query_box_target").item(0);
             //qbt.style.backgroundColor = 'transparent';
@@ -308,23 +311,26 @@ function checkAnswersYesNo() {
             //qbox.innerHTML = "<p>-5</p>";
             
             
-            // argh!
-            /*var qbt = qbox.getElementsByClassName("query_box_target").item(0);
             
-            qbt.style.borderColor = "red";
-            qbt.style.borderWidth = "3px";
-            qbt.innerHTML = "<p>-5</p>";
-            */
-            
-            pointGain += -5;
+            if (SAGAME.feedback == 'description') {
+                pointGain += -1;
 
-            var txt = "Voi ei! Jäi huomaamatta!<br /> -5";
-            if (qitem.type == 'occlusion') {
-                txt = "Voi ei!<br /> Näköeste jäi huomaamatta!<br /> -5";
-            }
+                var txt = "-1 <br />" + qitem.description;
+                
+                $("#"+ query_feedback_id).html(txt);
+                $("#"+ query_feedback_id).show(); 
+                
+            } else {
             
-            $("#"+ query_feedback_id).html(txt);
-            $("#"+ query_feedback_id).show();                
+                pointGain += -5;
+
+                var txt = "Voi ei! Jäi huomaamatta!<br /> -5";
+                if (qitem.type == 'occlusion') {
+                    txt = "Voi ei!<br /> Näköeste jäi huomaamatta!<br /> -5";
+                }
+                $("#"+ query_feedback_id).html(txt);
+                $("#"+ query_feedback_id).show(); 
+            }
         }
         
         if ((qitem.type != 'nothing') && (status == 'present')){
@@ -337,16 +343,28 @@ function checkAnswersYesNo() {
             qbox.style.borderWidth = "3px";
             //qbox.innerHTML = "<p>+5</p>";
 
+            if (SAGAME.feedback == 'description') {
+                pointGain += 1;
+
+                
+                var txt = "Hyvin havaittu! <br /> +1 <br />"+ qitem.description;
+         
+                $("#"+ query_feedback_id).html(txt);
+                $("#"+ query_feedback_id).show(); 
+   
+            } else {
+                pointGain += 5;
+                
+                var txt = "Hyvin havaittu! <br /> +1" ;
+                if (qitem.type == 'occlusion') {
+                    txt = "Hyvin havaittu näköeste!<br /> +1";
+                }
             
-            pointGain += 5;
-            
-            var txt = "Hyvin havaittu!<br /> +5";
-            if (qitem.type == 'occlusion') {
-                txt = "Hyvin havaittu näköeste!<br /> +5";
+                $("#"+ query_feedback_id).html(txt);
+                $("#"+ query_feedback_id).show(); 
+   
             }
-            $("#"+ query_feedback_id).html(txt);
-            $("#"+ query_feedback_id).show();     
-        } 
+        }
         
         if ((qitem.type == 'nothing') && (status == 'notpresent')){
             //var qbt = qbox.getElementsByClassName("query_box_target").item(0);
@@ -358,10 +376,19 @@ function checkAnswersYesNo() {
             qbox.style.borderWidth = "3px";
             //qbox.innerHTML = "<p>+1</p>";
             
-            pointGain += 1;
+            if (SAGAME.feedback == 'description') {
+                var txt = "+1" ;
+                
+                $("#"+query_feedback_id).html(txt);
+                $("#"+query_feedback_id).show();
+                
+            } else {
             
-            $("#"+query_feedback_id).html("Hyvä!<br/> Ei ollut mitään etkä valinnut sitä.<br />+1");
-            $("#"+query_feedback_id).show();     
+                pointGain += 0;
+                
+                $("#"+query_feedback_id).html("!<br/> Ei ollut mitään etkä valinnut sitä.<br />+1");
+                $("#"+query_feedback_id).show();     
+            }
         } 
         
         if ((qitem.type == 'nothing') && (status == 'present')){

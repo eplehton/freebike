@@ -5,7 +5,7 @@ function Target(){
     this.t = [];
     this.width = 0.1;
 	this.type = null;
-	this.instruction = null;
+	this.description = null;
 }
 
 
