@@ -315,7 +315,7 @@ function checkAnswersYesNo() {
             if (SAGAME.feedback == 'description') {
                 pointGain += -1;
 
-                var txt = "-1 <br />" + qitem.description;
+                var txt = qitem.description + "<br /> Menetit pisteen." ;
                 
                 $("#"+ query_feedback_id).html(txt);
                 $("#"+ query_feedback_id).show(); 
@@ -347,7 +347,7 @@ function checkAnswersYesNo() {
                 pointGain += 1;
 
                 
-                var txt = "Hyvin havaittu! <br /> +1 <br />"+ qitem.description;
+                var txt = "Hyvin havaittu! Sait pisteen. <br />"+ qitem.description;
          
                 $("#"+ query_feedback_id).html(txt);
                 $("#"+ query_feedback_id).show(); 
@@ -377,25 +377,31 @@ function checkAnswersYesNo() {
             //qbox.innerHTML = "<p>+1</p>";
             
             if (SAGAME.feedback == 'description') {
-                var txt = "+1" ;
+                //var txt = "+1" ;
                 
-                $("#"+query_feedback_id).html(txt);
-                $("#"+query_feedback_id).show();
+                //$("#"+query_feedback_id).html(txt);
+                //$("#"+query_feedback_id).show();
                 
             } else {
             
                 pointGain += 0;
                 
-                $("#"+query_feedback_id).html("!<br/> Ei ollut mitään etkä valinnut sitä.<br />+1");
-                $("#"+query_feedback_id).show();     
+                //$("#"+query_feedback_id).html("!<br/> Ei ollut mitään etkä valinnut sitä.<br />+1");
+                //$("#"+query_feedback_id).show();     
             }
         } 
         
         if ((qitem.type == 'nothing') && (status == 'present')){
             // var qbt = qbox.getElementsByClassName("query_box_target").item(0);
             
-            $("#"+query_feedback_id).html("Tyhjä!<br/> Jos jätät valitsematta sellaiset missä ei ole mitään niin saat yhden pisteen.")
-            $("#"+query_feedback_id).show();
+            if (SAGAME.feedback == 'description') {
+                $("#"+query_feedback_id).html("Hyvä yritys!")
+                $("#"+query_feedback_id).show();
+            } else {
+                
+                $("#"+query_feedback_id).html("Tyhjä!<br/> Jos jätät valitsematta sellaiset missä ei ole mitään niin saat yhden pisteen.")
+                $("#"+query_feedback_id).show();
+            }
         }             
         
     }
@@ -623,6 +629,8 @@ function showQuery(query) {
 
 		var qitem = query_items[box_id];
 
+        
+        // refactor: create this so that you can just plug different functions in depending on the query/feedback style 
         if (SAGAME.sagameStyle == 'mc_comment') {
             console.log("register mc_comment choice");
  
@@ -733,11 +741,52 @@ function showQuery(query) {
                             }
                             
             qbox.addEventListener("click", clickCircleCallback(qitem, query_id, box_id), false);
-            
+            $("#checkbutton").show();
 
-                            
+        } else if (SAGAME.sagameStyle == 'selectone') { // selectone
+        
+            // Here we setup the callbacks
+            function makeCallbackTB(qi, q_id, b_id) {
+                return function() { var status = toggleQueryBox(q_id, b_id); 
+                                    
+                                    checkAnswers();
+                    
+                                    /*console.log("query", query, q_id)
+                                    console.log(query.items[b_id])
+                    
+                                    if ((query.items[b_id].type != 'nothing') && (status == 'present')) {
+                                        console.log("Correct selection!");
+                                    } else {
+                                        console.log("False positive!");
+                                    }
+                                    
+                                    registerPresence(query, q_id, b_id, status, query_started_realt); 
+                                    */
+                                }
+                            }
+                        
+            qbox.addEventListener("click", makeCallbackTB(qitem, query_id, box_id), false);
 
+            // The stuff below is related to showing the circle and positioning it
+            var query_feedback_id = "query_feedback_" + query_id + '_' + box_id;        
+            var qfeedback = queryFeedbackTmpl.cloneNode(true);
+            qfeedback.id = query_feedback_id;        
+            qfeedback.innerHTML = "<p>"+ qitem.type + "</p>";
             
+            screen.appendChild(qbox);  
+            screen.appendChild(qfeedback);  
+            
+            qbox.style.display = "block";
+            qfeedback.style.display = "none";
+            
+            var clientxy = videoToClient(vplayer, qitem.x, qitem.y);
+            var centering =	[qbox.offsetWidth * 0.5, qbox.offsetHeight * 0.5];
+            
+            qbox.style.top = (clientxy[1] - centering[1]) + "px"; 
+            qbox.style.left = (clientxy[0] - centering[0]) + "px";
+            
+            qfeedback.style.top = (clientxy[1] - centering[1] - 100) + "px"; 
+            qfeedback.style.left = (clientxy[0] - centering[0]) + "px";            
             
         } else { // yesno
                                 
@@ -782,12 +831,14 @@ function showQuery(query) {
             
             qfeedback.style.top = (clientxy[1] - centering[1] - 100) + "px"; 
             qfeedback.style.left = (clientxy[0] - centering[0]) + "px";
+        
+            $("#checkbutton").show();
         }
-	}
+    }
 
 	showVideoMask();
     
-	$("#checkbutton").show();
+	
 }
 
 function showVideoMask() {
@@ -999,7 +1050,8 @@ function setupInteraction() {
         $("#start").show(); 
     });
     
-    $("#startButton").click(function() {
+    // hack, this works for sagame2016
+    $("#startButton").click(function() { 
         var playerId = $("#playerId").val();
         if (playerId != "") {
             sessionStorage.setItem("player_id", playerId);
@@ -1011,6 +1063,7 @@ function setupInteraction() {
             alert("Please give player id!");
         }
     });
+    
     
     $("#startPractice").click(function() {
         $("#practiceInstructions").hide();
@@ -1033,6 +1086,21 @@ function setupInteraction() {
         })
         
     })
+    
+    // hack, this works for fl2016
+    $("#showGameInstructions").click(function() {
+        var playerId = $("#playerId").val();
+        if (playerId != "") {
+            sessionStorage.setItem("player_id", playerId);
+            sessionStorage.setItem("Freebike.SAGame.session_id", Date.now());
+            
+            $("#start").hide();
+            $("#gameInstructions").show();
+        } else {
+            alert("Please give player id!");
+        }
+    });
+
     
     $("#startGame").click(function() {
         $("#gameInstructions").hide();
