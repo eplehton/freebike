@@ -1110,7 +1110,9 @@ function setupInteraction() {
         
         var videoSet = CLIPSETS.game[0];
         currentVideoSet = videoSet; // this is only to enable keyboard shortcuts!
-        shuffleArray(videoSet);
+        if (SAGAME.randomizeOrder)  {
+            shuffleArray(videoSet);
+        }
         
         function nextClip() {
             queriesBeforeCalibration -= 1;
