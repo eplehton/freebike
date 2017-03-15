@@ -89,7 +89,9 @@ var SAGAME = {};
 // defaults, can be overriden in the html
 SAGAME.sagameStyle = 'yesno';
 SAGAME.showMarkers = 1;
+SAGAME.calibInterval = 16;
 
+    
 var cached_targets = null;
 
 SAGAME.query_id = -1; // to hold the current position in the query data
@@ -180,6 +182,8 @@ function checkAnswers() {
 
     if (SAGAME.sagameStyle == 'mc_comment') {
         checkAnswersMultipleChoice();
+    } else if (SAGAME.sagameStyle == 'selectone') {
+        checkAnswersSelectOne();
     } else { // yesno
         checkAnswersYesNo();
     }
@@ -345,7 +349,6 @@ function checkAnswersYesNo() {
 
             if (SAGAME.feedback == 'description') {
                 pointGain += 1;
-
                 
                 var txt = "Hyvin havaittu! Sait pisteen. <br />"+ qitem.description;
          
@@ -386,8 +389,8 @@ function checkAnswersYesNo() {
             
                 pointGain += 0;
                 
-                //$("#"+query_feedback_id).html("!<br/> Ei ollut mitään etkä valinnut sitä.<br />+1");
-                //$("#"+query_feedback_id).show();     
+                $("#"+query_feedback_id).html("Hyvä!<br/> Ei ollut mitään etkä valinnut sitä.<br />+1");
+                $("#"+query_feedback_id).show();     
             }
         } 
         
@@ -432,6 +435,172 @@ function checkAnswersYesNo() {
 	
 	
 }
+
+
+function checkAnswersSelectOne() {
+    /**
+        Check answers and show feedback when you have to select one. 
+        Currently this is exactly lie yes-no, but this may change. 
+    */
+    var query_id = SAGAME.query_id;
+    
+    var query = test_queries[query_id];
+
+    
+    var had_miss = false;
+    var pointGain = 0;
+
+    
+    for (var box_id=0; box_id<query.items.length; box_id++) {
+        var qitem = query.items[box_id];
+        var query_box_id = "query_box_" + query_id + '_' + box_id;
+        var query_feedback_id = "query_feedback_" + query_id + '_' + box_id;
+        
+        var qbox = document.getElementById(query_box_id);
+        var status = getQueryBoxStatus(qbox);
+        if (status == 'notpresent') {
+            // we register the status of all the notpresents here
+            registerPresence(query, query_id, box_id, "notpresent", query_started_realt);
+        }
+        
+        
+        console.log(SAGAME.description);
+        
+        if (status == 'present') {
+            //var qbt = qbox.getElementsByClassName("query_box_target").item(0);
+            //qbt.style.backgroundColor = 'transparent';
+            qbox.style.backgroundColor = 'transparent';
+        }
+        
+        if ((qitem.type != 'nothing') && (status == 'notpresent')){
+            had_miss = true;
+            
+            qbox.style.borderColor = "red";
+            qbox.style.borderWidth = "3px";
+            //qbox.innerHTML = "<p>-5</p>";
+            
+            
+            
+            if (SAGAME.feedback == 'description') {
+                pointGain += -1;
+
+                var txt = qitem.description + "<br /> Menetit pisteen." ;
+                
+                $("#"+ query_feedback_id).html(txt);
+                $("#"+ query_feedback_id).show(); 
+                
+            } else {
+            
+                pointGain += -5;
+
+                var txt = "Voi ei! Jäi huomaamatta!<br /> -5";
+                if (qitem.type == 'occlusion') {
+                    txt = "Voi ei!<br /> Näköeste jäi huomaamatta!<br /> -5";
+                }
+                $("#"+ query_feedback_id).html(txt);
+                $("#"+ query_feedback_id).show(); 
+            }
+        }
+        
+        if ((qitem.type != 'nothing') && (status == 'present')){
+            //var qbt = qbox.getElementsByClassName("query_box_target").item(0);
+            //qbt.style.borderColor = "green";
+            //qbt.style.borderWidth = "3px";
+            //qbt.innerHTML = "<p>+5</p>";
+                            
+            qbox.style.borderColor = "green";
+            qbox.style.borderWidth = "3px";
+            //qbox.innerHTML = "<p>+5</p>";
+
+            if (SAGAME.feedback == 'description') {
+                pointGain += 1;
+                
+                var txt = "Hyvin havaittu! Sait pisteen. <br />"+ qitem.description;
+         
+                $("#"+ query_feedback_id).html(txt);
+                $("#"+ query_feedback_id).show(); 
+   
+            } else {
+                pointGain += 5;
+                
+                var txt = "Hyvin havaittu! <br /> +1" ;
+                if (qitem.type == 'occlusion') {
+                    txt = "Hyvin havaittu näköeste!<br /> +1";
+                }
+            
+                $("#"+ query_feedback_id).html(txt);
+                $("#"+ query_feedback_id).show(); 
+   
+            }
+        }
+        
+        if ((qitem.type == 'nothing') && (status == 'notpresent')){
+            //var qbt = qbox.getElementsByClassName("query_box_target").item(0);
+            //qbt.style.borderColor = "gray";
+            //qbt.style.borderWidth = "3px";
+            //qbt.innerHTML = "<p>+1</p>";
+            
+            qbox.style.borderColor = "gray";
+            qbox.style.borderWidth = "3px";
+            //qbox.innerHTML = "<p>+1</p>";
+            
+            if (SAGAME.feedback == 'description') {
+                //var txt = "+1" ;
+                
+                //$("#"+query_feedback_id).html(txt);
+                //$("#"+query_feedback_id).show();
+                
+            } else {
+            
+                pointGain += 0;
+                
+                $("#"+query_feedback_id).html("Hyvä!<br/> Ei ollut mitään etkä valinnut sitä.<br />+1");
+                $("#"+query_feedback_id).show();     
+            }
+        } 
+        
+        if ((qitem.type == 'nothing') && (status == 'present')){
+            // var qbt = qbox.getElementsByClassName("query_box_target").item(0);
+            
+            if (SAGAME.feedback == 'description') {
+                $("#"+query_feedback_id).html("Hyvä yritys!")
+                $("#"+query_feedback_id).show();
+            } else {
+                
+                $("#"+query_feedback_id).html("Tyhjä!<br/> Jos jätät valitsematta sellaiset missä ei ole mitään niin saat yhden pisteen.")
+                $("#"+query_feedback_id).show();
+            }
+        }             
+        
+    }
+    
+    if (had_miss) {
+        $("#missplayer")[0].play();
+        
+    } else {
+        $("#targethitplayer")[0].play();
+    }
+    
+    // remove as obsolate? $(videoplayer)[0].style.display = "block";
+    
+    console.log(pointCounter);
+    console.log(pointGain);
+    pointCounter += pointGain;
+    if (pointCounter < 0) {
+        pointCounter = 0;
+    }
+    
+    //$(points)[0].style.width = (1 + 20*pointCounter) + "px";
+    $("#points").html ('<p>Pisteet ' + pointCounter + '</p>');
+	
+    
+    $("#videoMask").hide();
+	$("#checkbutton").hide();
+	$("#nextbutton").show();
+	
+	
+}
+
 
 
 function downloadDexieTable(tableName) {
@@ -594,7 +763,50 @@ function registerPresence(query, query_id, box_id, answer, query_started_realt) 
     //~ return [x, y]
 //~ } 
 
-var RAI_qi = null;
+//var RAI_qi = null;
+
+
+function createQueryLocation(locData, query_id, box_id) {
+    
+    // The stuff below is related to showing the circle and positioning it
+    
+  	var queryBoxTmpl = document.getElementById("query_box_template");
+	var queryFeedbackTmpl = document.getElementById("query_feedback_template");
+    var screen = document.getElementById("screen");
+	var vplayer = document.getElementById("videoplayer");
+    
+    // create box (circle) elements
+    var query_box_id = "query_box_" + query_id + '_' + box_id;
+    var qbox = queryBoxTmpl.cloneNode(true);
+    qbox.id = query_box_id;
+    
+    // create feedback element
+    var query_feedback_id = "query_feedback_" + query_id + '_' + box_id;        
+    var qfeedback = queryFeedbackTmpl.cloneNode(true);
+    qfeedback.id = query_feedback_id;        
+    // qfeedback.innerHTML = "<p>"+ qitem.type + "</p>"; // this is obsolate
+    
+    // add them to the screen element
+    screen.appendChild(qbox);  
+    screen.appendChild(qfeedback);  
+    
+    // show the box, hide the feedback so far
+    qbox.style.display = "block";
+    qfeedback.style.display = "none";
+    
+    // positioning
+    var clientxy = videoToClient(vplayer, locData.x, locData.y);
+    var centering =	[qbox.offsetWidth * 0.5, qbox.offsetHeight * 0.5];
+    
+    qbox.style.top = (clientxy[1] - centering[1]) + "px"; 
+    qbox.style.left = (clientxy[0] - centering[0]) + "px";
+    
+    qfeedback.style.top = (clientxy[1] - centering[1] - 100) + "px"; 
+    qfeedback.style.left = (clientxy[0] - centering[0]) + "px";
+        
+    return qbox;
+}
+
 
 function showQuery(query) {
 	console.log("showQuery called with:");
@@ -605,16 +817,15 @@ function showQuery(query) {
     
     // Setup of variables 
     var query_items = query.items;
-	RAI_qi = query_items;
+	//RAI_qi = query_items;
 	
 	var vplayer = document.getElementById("videoplayer");
 	var nbutton = document.getElementById("nextbutton");
 	var screen = document.getElementById("screen");
 	
-	var qbt = document.getElementById("query_box_template");
-	var queryFeedbackTmpl = document.getElementById("query_feedback_template");
-
-	// Let's make sure the video is paused and then we record that event
+    var screen = document.getElementById("screen");
+	
+    // Let's make sure the video is paused and then we record that event
 	vplayer.pause();
     query_started_realt = Date.now();
 	var ev = new ExpEvent(vplayer.src, 'queryStarted', vplayer.currentTime);
@@ -623,124 +834,77 @@ function showQuery(query) {
     // Now for each target, we make the circle visible and setup callbacks
     
 	for (var box_id=0; box_id<query_items.length; box_id++) {
-		var query_box_id = "query_box_" + query_id + '_' + box_id;
-		var qbox = qbt.cloneNode(true);
-		qbox.id = query_box_id;
-
-		var qitem = query_items[box_id];
-
+		
+		var locationData = query_items[box_id];
+        var qbox = createQueryLocation(locationData, query_id, box_id);
         
         // refactor: create this so that you can just plug different functions in depending on the query/feedback style 
         if (SAGAME.sagameStyle == 'mc_comment') {
             console.log("register mc_comment choice");
- 
-            // The stuff below is related to showing the circle and positioning it
-            var query_feedback_id = "query_feedback_" + query_id + '_' + box_id;        
-            var qfeedback = queryFeedbackTmpl.cloneNode(true);
-
-            
-            qfeedback.id = query_feedback_id;        
-            qfeedback.innerHTML = "<p>"+ qitem.type + "</p>";
-            
-            screen.appendChild(qbox);  
-            screen.appendChild(qfeedback);  
-            
-            qbox.style.display = "block";
-            qfeedback.style.display = "none";
-            
-            var clientxy = videoToClient(vplayer, qitem.x, qitem.y);
-            var centering =	[qbox.offsetWidth * 0.5, qbox.offsetHeight * 0.5];
-            
-            qbox.style.top = (clientxy[1] - centering[1]) + "px"; 
-            qbox.style.left = (clientxy[0] - centering[0]) + "px";
-            
-            qfeedback.style.top = (clientxy[1] - centering[1] - 100) + "px"; 
-            qfeedback.style.left = (clientxy[0] - centering[0]) + "px";
-            
-            
-            var queryMultipleChoiceTmpl = document.getElementById("query_multiple_choice_template");
-            var qMC = queryMultipleChoiceTmpl.cloneNode(true);
-            var qMCid = "query_mc_" + query_id + '_' + box_id;
-            qMC.id = qMCid;
-            
-            screen.appendChild(qMC);
-            
-            qMC.style.top = (clientxy[1] - centering[1] + 200) + "px"; 
-            qMC.style.left = (clientxy[0] - centering[0]) + "px";
-            qMC.style.display = "none";
-            
-            
-            if (qitem.multiple_choices == undefined) {
-                alert("Multiple choices have not been defined for this target");
-            } else {
-                var id_0 = qMCid + '_option0';
-                var id_1 = qMCid + '_option1';
-                var id_2 = qMCid + '_option2';
-                // var id_empty = qMCid + '_empty';
-                
-                var radioGroup = 'mc_'+ query_id + '_'+ box_id;
-                
-                var html = "";
-                html += '<p id="'+ id_0 +'"><input type="radio" name="'+ radioGroup +'" value="0" />' + qitem.multiple_choices[0][0] + '</p>';
-                html += '<p id="'+ id_1 +'"><input type="radio" name="'+ radioGroup +'" value="1" />' + qitem.multiple_choices[1][0] + '</p>';
-                html += '<p id="'+ id_2 +'"><input type="radio" name="'+ radioGroup +'" value="2"/>' + qitem.multiple_choices[2][0] + '</p>';
-                //html += '<p id="'+ id_empty +'"><input type="radio" name="'+ radioGroup +'" value="empty"  checked /> Tyhjä </p>';                
-                qMC.innerHTML = html
-                
-                
-                function hideMultipleChoicesCallback(query_id, box_id) {
-                    return function() {
-                        var id = "#query_mc_"+ query_id +"_"+ box_id;
-                        console.log(id);
-                        $(id).hide();
-                    }
-                }
-                
-                $("#"+ id_0).change( hideMultipleChoicesCallback(query_id, box_id));
-                $("#"+ id_1).change( hideMultipleChoicesCallback(query_id, box_id));
-                $("#"+ id_2).change( hideMultipleChoicesCallback(query_id, box_id));
-                // $("#"+ id_empty).change( hideMultipleChoicesCallback(query_id, box_id));
-            }
             
             // Here we setup the callbacks
-            function clickCircleCallback(qitem, query_id, box_id) {
+            function clickCircleCallback(locationData, query_id, box_id) {
                 return function() { 
-                                var status = toggleQueryBox(query_id, box_id); 
                     
-                                var qMCid = "query_mc_"+ query_id +'_'+ box_id;
+                                // this is the id for multiple choice element
+                                var qMCid = "query_mc_" + query_id + '_' + box_id;
+                    
+                                // setup multiple choice selection
+                    
+                                if (document.getElementById(qMCid)) { // create it if id does not exist
+                    
+                                    var queryMultipleChoiceTmpl = document.getElementById("query_multiple_choice_template");
+                                    var qMC = queryMultipleChoiceTmpl.cloneNode(true);
+                                    qMC.id = qMCid;
+                                
+                                    screen.appendChild(qMC);
+                                    
+                                    qMC.style.top = (clientxy[1] - centering[1] + 200) + "px"; 
+                                    qMC.style.left = (clientxy[0] - centering[0]) + "px";
+                                    qMC.style.display = "none";
+                                
+                                
+                                    if (locationData.multiple_choices == undefined) {
+                                        alert("Multiple choices have not been defined for this target");
+                                    } else {
+                                        var id_0 = qMCid + '_option0';
+                                        var id_1 = qMCid + '_option1';
+                                        var id_2 = qMCid + '_option2';
+                                        
+                                        var radioGroup = 'mc_'+ query_id + '_'+ box_id;
+                                        
+                                        var html = "";
+                                        html += '<p id="'+ id_0 +'"><input type="radio" name="'+ radioGroup +'" value="0" />' + locationData.multiple_choices[0][0] + '</p>';
+                                        html += '<p id="'+ id_1 +'"><input type="radio" name="'+ radioGroup +'" value="1" />' + locationData.multiple_choices[1][0] + '</p>';
+                                        html += '<p id="'+ id_2 +'"><input type="radio" name="'+ radioGroup +'" value="2"/>' + locationData.multiple_choices[2][0] + '</p>';
+                                        qMC.innerHTML = html  
+                                        
+                                        // make it hide when selected
+                                        function hideMultipleChoicesCallback(query_id, box_id) {
+                                            return function() {
+                                                var id = "#query_mc_"+ query_id +"_"+ box_id;
+                                                console.log(id);
+                                                $(id).hide();
+                                            }
+                                        }
+                                        $("#"+ id_0).change( hideMultipleChoicesCallback(query_id, box_id));
+                                        $("#"+ id_1).change( hideMultipleChoicesCallback(query_id, box_id));
+                                        $("#"+ id_2).change( hideMultipleChoicesCallback(query_id, box_id));
+                                        
+                                    }
+                                }
+                    
+                                // let the circle change colour
+                                var status = toggleQueryBox(query_id, box_id); 
+                                
+                                // show it, it hides when some of the elements is selected
                                 $("#"+ qMCid).show(); 
 
-                                        
-                                //function clickMCoption(query_id, box_id, ) {
-                                //    var qMCoptionID = "query_mc_" + query_id + '_' + box_id;
-                                //    var qMCoption = document.getElementById(qMCoptionID);
-                                //    qMCoption.style.backgroundColor = 'red';
-                                //}
-                    
-                                //qMC.addEventListener("click", clickMCoption(query_id, box_id, option), false);
-                    
-                                //console.log(qitem);
-                                //if (qitem.multiple_choices == undefined) {
-                                //    alert("Multiple choices have not been defined for this target");
-                                //}
-                                console.log(qitem.multiple_choices);
-                                
-                                
-                                //$("#mcItem1_text").html(qitem.multiple_choices[0][0]);
-                                //$("#mcItem2_text").html(qitem.multiple_choices[1][0]);
-                                //$("#mcItem3_text").html(qitem.multiple_choices[2][0]);
-                                
-                                
-                                
-                                //var clientxy = videoToClient(vplayer, qitem.x, qitem.y);
-
-                                //$("#mc_comment_box")[0].style.top = (clientxy[1]) + "px"; 
-                                //$("#mc_comment_box")[0].style.left = (clientxy[0]) + "px";
-
+                                //console.log(qitem.multiple_choices);
                                 }
                             }
                             
-            qbox.addEventListener("click", clickCircleCallback(qitem, query_id, box_id), false);
+            qbox.addEventListener("click", clickCircleCallback(locationData, query_id, box_id), false);
             $("#checkbutton").show();
 
         } else if (SAGAME.sagameStyle == 'selectone') { // selectone
@@ -748,89 +912,80 @@ function showQuery(query) {
             // Here we setup the callbacks
             function makeCallbackTB(qi, q_id, b_id) {
                 return function() { var status = toggleQueryBox(q_id, b_id); 
-                                    
+
+                                    // the first hit is the answer, so we proceed immediately to the checkAnswers
                                     checkAnswers();
                     
-                                    /*console.log("query", query, q_id)
-                                    console.log(query.items[b_id])
-                    
-                                    if ((query.items[b_id].type != 'nothing') && (status == 'present')) {
-                                        console.log("Correct selection!");
-                                    } else {
-                                        console.log("False positive!");
-                                    }
-                                    
-                                    registerPresence(query, q_id, b_id, status, query_started_realt); 
-                                    */
                                 }
                             }
                         
-            qbox.addEventListener("click", makeCallbackTB(qitem, query_id, box_id), false);
+            qbox.addEventListener("click", makeCallbackTB(locationData, query_id, box_id), false);
 
+            
             // The stuff below is related to showing the circle and positioning it
-            var query_feedback_id = "query_feedback_" + query_id + '_' + box_id;        
-            var qfeedback = queryFeedbackTmpl.cloneNode(true);
-            qfeedback.id = query_feedback_id;        
-            qfeedback.innerHTML = "<p>"+ qitem.type + "</p>";
+            //~ var query_feedback_id = "query_feedback_" + query_id + '_' + box_id;        
+            //~ var qfeedback = queryFeedbackTmpl.cloneNode(true);
+            //~ qfeedback.id = query_feedback_id;        
+            //~ qfeedback.innerHTML = "<p>"+ qitem.type + "</p>";
             
-            screen.appendChild(qbox);  
-            screen.appendChild(qfeedback);  
+            //~ screen.appendChild(qbox);  
+            //~ screen.appendChild(qfeedback);  
             
-            qbox.style.display = "block";
-            qfeedback.style.display = "none";
+            //~ qbox.style.display = "block";
+            //~ qfeedback.style.display = "none";
             
-            var clientxy = videoToClient(vplayer, qitem.x, qitem.y);
-            var centering =	[qbox.offsetWidth * 0.5, qbox.offsetHeight * 0.5];
+            //~ var clientxy = videoToClient(vplayer, qitem.x, qitem.y);
+            //~ var centering =	[qbox.offsetWidth * 0.5, qbox.offsetHeight * 0.5];
             
-            qbox.style.top = (clientxy[1] - centering[1]) + "px"; 
-            qbox.style.left = (clientxy[0] - centering[0]) + "px";
+            //~ qbox.style.top = (clientxy[1] - centering[1]) + "px"; 
+            //~ qbox.style.left = (clientxy[0] - centering[0]) + "px";
             
-            qfeedback.style.top = (clientxy[1] - centering[1] - 100) + "px"; 
-            qfeedback.style.left = (clientxy[0] - centering[0]) + "px";            
+            //~ qfeedback.style.top = (clientxy[1] - centering[1] - 100) + "px"; 
+            //~ qfeedback.style.left = (clientxy[0] - centering[0]) + "px";            
             
         } else { // yesno
-                                
-        
+                
             // Here we setup the callbacks
             function makeCallbackTB(qi, q_id, b_id) {
-                return function() { var status = toggleQueryBox(q_id, b_id); 
-                                    
-                                    console.log("query", query, q_id)
-                                    console.log(query.items[b_id])
+                return function() { 
+                                    //console.log("query", query, q_id)
+                                    //console.log(query.items[b_id])
                     
-                                    if ((query.items[b_id].type != 'nothing') && (status == 'present')) {
-                                        console.log("Correct selection!");
-                                    } else {
-                                        console.log("False positive!");
-                                    }
-                                    
+                                    //if ((query.items[b_id].type != 'nothing') && (status == 'present')) {
+                                    //    console.log("Correct selection!");
+                                    //} else {
+                                    //    console.log("False positive!");
+                                    //}
+                    
+                                    // let the circle change its colour
+                                    var status = toggleQueryBox(q_id, b_id); 
+                                    // register every tap
                                     registerPresence(query, q_id, b_id, status, query_started_realt); 
-                                    
                                 }
                             }
                         
-            qbox.addEventListener("click", makeCallbackTB(qitem, query_id, box_id), false);
+            qbox.addEventListener("click", makeCallbackTB(locationData, query_id, box_id), false);
 
-            // The stuff below is related to showing the circle and positioning it
-            var query_feedback_id = "query_feedback_" + query_id + '_' + box_id;        
-            var qfeedback = queryFeedbackTmpl.cloneNode(true);
-            qfeedback.id = query_feedback_id;        
-            qfeedback.innerHTML = "<p>"+ qitem.type + "</p>";
+            //~ // The stuff below is related to showing the circle and positioning it
+            //~ var query_feedback_id = "query_feedback_" + query_id + '_' + box_id;        
+            //~ var qfeedback = queryFeedbackTmpl.cloneNode(true);
+            //~ qfeedback.id = query_feedback_id;        
+            //~ qfeedback.innerHTML = "<p>"+ qitem.type + "</p>";
             
-            screen.appendChild(qbox);  
-            screen.appendChild(qfeedback);  
+            //~ screen.appendChild(qbox);  
+            //~ screen.appendChild(qfeedback);  
             
-            qbox.style.display = "block";
-            qfeedback.style.display = "none";
+            //~ qbox.style.display = "block";
+            //~ qfeedback.style.display = "none";
             
-            var clientxy = videoToClient(vplayer, qitem.x, qitem.y);
-            var centering =	[qbox.offsetWidth * 0.5, qbox.offsetHeight * 0.5];
+            //~ var clientxy = videoToClient(vplayer, qitem.x, qitem.y);
+            //~ var centering =	[qbox.offsetWidth * 0.5, qbox.offsetHeight * 0.5];
             
-            qbox.style.top = (clientxy[1] - centering[1]) + "px"; 
-            qbox.style.left = (clientxy[0] - centering[0]) + "px";
+            //~ qbox.style.top = (clientxy[1] - centering[1]) + "px"; 
+            //~ qbox.style.left = (clientxy[0] - centering[0]) + "px";
             
-            qfeedback.style.top = (clientxy[1] - centering[1] - 100) + "px"; 
-            qfeedback.style.left = (clientxy[0] - centering[0]) + "px";
+            //~ qfeedback.style.top = (clientxy[1] - centering[1] - 100) + "px"; 
+            //~ qfeedback.style.left = (clientxy[0] - centering[0]) + "px";
         
             $("#checkbutton").show();
         }
@@ -1105,7 +1260,7 @@ function setupInteraction() {
     $("#startGame").click(function() {
         $("#gameInstructions").hide();
         
-        var calibInterval = 16;
+        var calibInterval = SAGAME.calibInterval;
         var queriesBeforeCalibration = calibInterval;
         
         var videoSet = CLIPSETS.game[0];
