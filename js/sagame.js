@@ -90,7 +90,7 @@ var SAGAME = {};
 SAGAME.sagameStyle = 'yesno';
 SAGAME.showMarkers = 1;
 SAGAME.calibInterval = 16;
-
+SAGAME.clipIdLength = 3; // hom many characters from the beginning will be shown as clip id
     
 var cached_targets = null;
 
@@ -119,6 +119,9 @@ var PERF_video_paused = 0;
 function annoTargets2TestQuery(clipname, all_targets) {
 	var cur_trgs = all_targets[clipname];
 	
+    console.log(clipname);
+    console.log(all_targets);
+    
 	if (cur_trgs === undefined) {
 		alert("No targets with clipname: " + clipname);
 	}
@@ -645,12 +648,14 @@ function loadTargetsFrom(json_file) {
 function loadQueries(videoset) {
 	var all_targets = cached_targets;
 	
-	var testset_num = sessionStorage.getItem("testset_num");
-	if (testset_num == null) { // this was 'null' : bug!
-		testset_num = 0;
-    }	
+	//var testset_num = sessionStorage.getItem("testset_num");
+	//if (testset_num == null) { // this was 'null' : bug!
+	//	testset_num = 0;
+    //}	
     
     var cliplist = videoset;
+    console.log("cliplist");
+    console.log(cliplist);
     
 	var test_queries = [];
 	
@@ -1045,7 +1050,9 @@ function startGame(query_id, videoset) {
             $("#videoplayer")[0].src = CLIPPATH + query.clip;
             var src = $("#videoplayer")[0].src; // this will be used to check that the timeout function does not show queries when changing videos
                     
-            $("#currentvideo").html( query.clip.substring(0,3) );   
+            $("#currentvideo").html( '('+ (query_id+1) +'/'+ videoset.length +') ' + query.clip.substring(0, SAGAME.clipIdLength) );
+
+            
             console.log("Playing " + $("#videoplayer")[0].src);
             
             $("#videoplayer").off("playing");              
@@ -1260,10 +1267,9 @@ function setupInteraction() {
     $("#startGame").click(function() {
         $("#gameInstructions").hide();
         
-        var calibInterval = SAGAME.calibInterval;
-        var queriesBeforeCalibration = calibInterval;
+        var queriesBeforeCalibration = SAGAME.calibInterval;
         
-        var videoSet = CLIPSETS.game[0];
+        var videoSet = CLIPSETS.game;
         currentVideoSet = videoSet; // this is only to enable keyboard shortcuts!
         if (SAGAME.randomizeOrder == 1)  {
             shuffleArray(videoSet);
@@ -1322,14 +1328,18 @@ function setupInteraction() {
 	$(document).keypress(function(event){
 		switch (event.which) {
 			case "a".charCodeAt(0):
-                
-                SAGAME.query_id += 1;
-                startGame(SAGAME.query_id, currentVideoSet);
+
+                if ((SAGAME.query_id+1) < currentVideoSet.length) {            
+                    SAGAME.query_id += 1;
+                    startGame(SAGAME.query_id, currentVideoSet);
+                }
 				break;
 			case "z".charCodeAt(0):
-                
-                SAGAME.query_id -= 2;;
-                startGame(SAGAME.query_id, currentVideoSet);
+
+                if ((SAGAME.query_id-1) < currentVideoSet.length) {                            
+                    SAGAME.query_id -= 2;;
+                    startGame(SAGAME.query_id, currentVideoSet);
+                }
 				break;
             
 			case 'c'.charCodeAt(0):

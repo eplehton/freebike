@@ -23,11 +23,44 @@
         SAGAME.showMarkers = 0;
         SAGAME.calibInterval = 999;
 
-    
-		loadTargetsFrom('js/sagame_targets_20160125.json');
-		$(document).ready(function(){				
-			setupInteraction();
+        var clipsets_json = 'js/sagame_clipsets_rsos2016.json';
+        var targets_json = 'js/sagame_targets_20160125.json';        
+        
+        var search = window.location.search;
+        if (search[0] == '?') { search = search.slice(1); } // Firefox can't handle leading ? 
+        const params = new URLSearchParams(search);
+        
+        
+        if (params.has('clipsets')) {
+            console.log("clipsets got");
+            clipsets_json = 'js/' + params.get("clipsets");
+        }
+        if (params.has('targets')) {
+            targets_json = 'js/' + params.get("targets");
+        }
+
+		$(document).ready(function() {
+            var req1 = loadClipsetsFrom(clipsets_json);
+            req1.done( function() { 
+                var req2 = loadTargetsFrom(targets_json);
+                console.log("2");
+                req2.done( function() { 
+                    setupInteraction(); 
+                }).fail(function(err) {
+                    console.log("Loading targets failed")
+                    console.log(err);
+                });
+            }).fail(function(err) {
+                console.log("Loading clipsets failed")
+                console.log(err);
+            });
         });
+    
+		//loadTargetsFrom('js/sagame_targets_20160125.json');
+		//$(document).ready(function(){				
+		//	setupInteraction();
+        //});
+        
     </script>
 
 </head>

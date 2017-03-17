@@ -23,12 +23,10 @@
         SAGAME.feedback = 'description';
         SAGAME.showMarkers = 0;
         SAGAME.randomizeOrder = 0;
-        
+        SAGAME.clipIdLength = 11;
         
         var search = window.location.search;
-        
         if (search[0] == '?') { search = search.slice(1); } // Firefox can't handle leading ? 
-    
         const params = new URLSearchParams(search);
         // sagame_clipsets_rsos2016.json
         // var clipsets_json = 'js/sagame_clipsets_trukki.json';
