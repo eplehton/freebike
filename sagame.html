@@ -16,6 +16,11 @@
     <script language="javascript" type="text/javascript" src="js/sagame_clips.js"></script>
     <script language="javascript" type="text/javascript" src="js/common.js"></script>
     <script language="javascript" type="text/javascript" src="js/markerlib.js"></script>
+    
+    <!-- offline: support for running without a server from file -->
+    <script language="javascript" type="text/javascript" src="js/sagame_offline_clipsets.js"></script>
+    <script language="javascript" type="text/javascript" src="js/sagame_offline_targets.js"></script>
+    
     <script language="javascript" type="text/javascript" src="js/sagame.js"></script>
 	<script language="javascript" type="text/javascript">
     
@@ -24,7 +29,7 @@
         SAGAME.calibInterval = 999;
 
         var clipsets_json = 'js/sagame_clipsets_rsos2016.json';
-        var targets_json = 'js/sagame_targets_20160125.json';        
+        var targets_json = 'js/sagame_targets_rsos2016.json';        
         
         var search = window.location.search;
         if (search[0] == '?') { search = search.slice(1); } // Firefox can't handle leading ? 
@@ -40,19 +45,14 @@
         }
 
 		$(document).ready(function() {
+            // offline fallback versions
+            
             var req1 = loadClipsetsFrom(clipsets_json);
-            req1.done( function() { 
+            req1.always( function() { // we go on always, because we trust on offline fallback
                 var req2 = loadTargetsFrom(targets_json);
-                console.log("2");
-                req2.done( function() { 
+                req2.always( function() { // we go on always, because we trust on offline fallback
                     setupInteraction(); 
-                }).fail(function(err) {
-                    console.log("Loading targets failed")
-                    console.log(err);
-                });
-            }).fail(function(err) {
-                console.log("Loading clipsets failed")
-                console.log(err);
+                });    
             });
         });
     

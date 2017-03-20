@@ -91,8 +91,11 @@ SAGAME.sagameStyle = 'yesno';
 SAGAME.showMarkers = 1;
 SAGAME.calibInterval = 16;
 SAGAME.clipIdLength = 3; // hom many characters from the beginning will be shown as clip id
+SAGAME.CLIPSETS = null;
+SAGAME.CLIPPATH = null;
+SAGAME.TARGETS = null;
     
-var cached_targets = null;
+
 
 SAGAME.query_id = -1; // to hold the current position in the query data
 
@@ -102,10 +105,7 @@ var query_box_present_color = 'yellow';
 var query_started_realt = null; // global var which is used when registering not presence (should be something neater...)
 var showQueryTimeout = null; // playing event may fire twice
 
-// var test_answers = [];
 
-// var CLIPSETS = null;  // must be set by the HTML page
-// var CLIPPATH = null;  // must be set by the HTML page
 
 var currentVideoSet = null; // this is only to enable keyboard shortcuts!
 
@@ -627,8 +627,13 @@ function downloadDexieTable(tableName) {
 function loadClipsetsFrom(json_file) { 
     
     var req = $.getJSON(json_file, function(data) {
-        CLIPSETS = data.CLIPSETS;
-        CLIPPATH = data.CLIPPATH;
+        SAGAME.CLIPSETS = data.CLIPSETS;
+        SAGAME.CLIPPATH = data.CLIPPATH;
+    }).fail(function(err) {
+        console.log(err);
+        console.log("Loading clipsets with AJAX failed. Fallback to offline version.");
+        SAGAME.CLIPSETS = OFFLINE_CLIPSETS;
+        SAGAME.CLIPPATH = OFFLINE_CLIPPATH;
     });
     return req;
 }
@@ -638,7 +643,11 @@ function loadClipsetsFrom(json_file) {
  */
 function loadTargetsFrom(json_file) { 
     var req = $.getJSON(json_file, function(data) {
-        cached_targets = data;
+        SAGAME.TARGETS = data;
+    }).fail(function(err) {
+        console.log(err);
+        console.log("Loading targets with AJAX failed. Fallback to offline version.");
+        SAGAME.TARGETS = OFFLINE_TARGETS;
     });
     return req;
 }
@@ -646,7 +655,7 @@ function loadTargetsFrom(json_file) {
 
 
 function loadQueries(videoset) {
-	var all_targets = cached_targets;
+	var all_targets = SAGAME.TARGETS;
 	
 	//var testset_num = sessionStorage.getItem("testset_num");
 	//if (testset_num == null) { // this was 'null' : bug!
@@ -1047,7 +1056,7 @@ function startGame(query_id, videoset) {
 
         
             
-            $("#videoplayer")[0].src = CLIPPATH + query.clip;
+            $("#videoplayer")[0].src = SAGAME.CLIPPATH + query.clip;
             var src = $("#videoplayer")[0].src; // this will be used to check that the timeout function does not show queries when changing videos
                     
             $("#currentvideo").html( '('+ (query_id+1) +'/'+ videoset.length +') ' + query.clip.substring(0, SAGAME.clipIdLength) );
@@ -1230,7 +1239,7 @@ function setupInteraction() {
     $("#startPractice").click(function() {
         $("#practiceInstructions").hide();
         
-        var practiceSet = CLIPSETS.practice;
+        var practiceSet = SAGAME.CLIPSETS.practice;
         currentVideoSet = practiceSet; // this is only to enable keyboard shortcuts!
         
         SAGAME.query_id = 0;
@@ -1269,7 +1278,7 @@ function setupInteraction() {
         
         var queriesBeforeCalibration = SAGAME.calibInterval;
         
-        var videoSet = CLIPSETS.game;
+        var videoSet = SAGAME.CLIPSETS.game;
         currentVideoSet = videoSet; // this is only to enable keyboard shortcuts!
         if (SAGAME.randomizeOrder == 1)  {
             shuffleArray(videoSet);
