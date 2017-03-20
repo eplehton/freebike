@@ -253,10 +253,12 @@ body {
 	
 	font-family: 'Indie Flower', cursive;
 	font-size: xx-large;
-	text-align: center;
 	
+	text-align: center;
 	border-radius: 5ex;
 }
+
+
 
 #pleasePrepareInstructions {
 	background-color: #554;
