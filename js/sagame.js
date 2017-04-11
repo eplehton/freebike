@@ -92,14 +92,15 @@ SAGAME.showMarkers = 1;
 SAGAME.calibInterval = 16;
 SAGAME.clipIdLength = 3; // hom many characters from the beginning will be shown as clip id
 SAGAME.CLIPSETS = null;
-SAGAME.currentClipset = null;
 SAGAME.CLIPPATH = null;
 SAGAME.TARGETS = null;
-    
-
 
 SAGAME.query_id = -1; // to hold the current position in the query data
 
+SAGAME.currentClipset = null;
+SAGAME.currentPoints = 0;
+SAGAME.currentMaxPoints = 0;
+    
 var test_queries; // to hold query data
 
 var query_box_present_color = 'yellow';
@@ -108,7 +109,7 @@ var showQueryTimeout = null; // playing event may fire twice
 
 
 
-var pointCounter = 0;
+var pointCounter = 0; // should be replaced by SAGAME attribute
 
 var PERF_video_play_called = 0;
 var PERF_video_paused = 0;
@@ -259,9 +260,13 @@ function checkAnswersMultipleChoice() {
     
     console.log(pointCounter);
     console.log(pointGain);
-    pointCounter += pointGain;
+    pointCounter += pointGain; // replace with SAGAME attribute
+    
+    SAGAME.currentPoints += pointGain;
+    
     if (pointCounter < 0) {
         pointCounter = 0;
+        SAGAME.currentPoints = 0;
     }
     
     //$(points)[0].style.width = (1 + 20*pointCounter) + "px";
@@ -287,6 +292,7 @@ function checkAnswersYesNo() {
     
     var had_miss = false;
     var pointGain = 0;
+    
 
     
     for (var box_id=0; box_id<query.items.length; box_id++) {
@@ -1029,7 +1035,11 @@ function showVideoMask() {
 	 
 
 
-function startGame(query_id, videoset) {
+function playVideo(query_id, videoset) {
+    /*
+        This plays a single video in the game.
+    */
+    
     
 	console.log("startGame called");
     
@@ -1246,22 +1256,25 @@ function setupInteraction() {
     });
 
     
-    $("#startPractice").click(function() {
+    $("#startPractice").click(function() {  // consider modifying this so that practise is just one game set?
         $("#practiceInstructions").hide();
         
         SAGAME.currentClipset = SAGAME.CLIPSETS.practice; // should this be configurable?
+        SAGAME.currentPoints = 0;
+        SAGAME.currentMaxPoints = 0;
+        
         var practiceSet = SAGAME.currentClipset;
         
         
         SAGAME.query_id = 0;
-        startGame(SAGAME.query_id, practiceSet)
+        playVideo(SAGAME.query_id, practiceSet)
     
         $("#nextbutton").off("click");
         $("#nextbutton").click(function() {
         
             SAGAME.query_id += 1;
             if (SAGAME.query_id < practiceSet.length) {
-                startGame(SAGAME.query_id, practiceSet);
+                playVideo(SAGAME.query_id, practiceSet);
             } else {
                 $("#home").show();
                 // $("#gameInstructions").show();
@@ -1284,13 +1297,16 @@ function setupInteraction() {
     });
 
     
-    $("#startGame").click(function() {
+    $("#startGame").click(function() { // consider creating a function which get a parameter game set
         $("#gameInstructions").hide();
+
+        SAGAME.currentPoints = 0; 
+        SAGAME.currentMaxPoints = 0;
         
         var queriesBeforeCalibration = SAGAME.calibInterval;
         
-        var videoSet = SAGAME.currentClipset;
-       
+        var videoSet = SAGAME.currentClipset; 
+        
         if (SAGAME.randomizeOrder == 1)  {
             shuffleArray(videoSet);
             // SAGAME.currentClipset = videoSet; // is it necessary to do this? 
@@ -1302,7 +1318,7 @@ function setupInteraction() {
             queriesBeforeCalibration -= 1;
             SAGAME.query_id += 1;
             if (SAGAME.query_id < videoSet.length) {
-                startGame(SAGAME.query_id, videoSet);
+                playVideo(SAGAME.query_id, videoSet);
             } else {
                 $("#endInstructions").show();
             }
@@ -1354,14 +1370,14 @@ function setupInteraction() {
 
                 if ((SAGAME.query_id+1) < SAGAME.CLIPSETS.currentClipset.length) {            
                     SAGAME.query_id += 1;
-                    startGame(SAGAME.query_id, SAGAME.CLIPSETS.currentClipset);
+                    playVideo(SAGAME.query_id, SAGAME.CLIPSETS.currentClipset);
                 }
 				break;
 			case "z".charCodeAt(0):
 
                 if ((SAGAME.query_id-1) < SAGAME.CLIPSETS.currentClipset.length) {                            
                     SAGAME.query_id -= 2;;
-                    startGame(SAGAME.query_id, SAGAME.CLIPSETS.currentClipset);
+                    playVideo(SAGAME.query_id, SAGAME.CLIPSETS.currentClipset);
                 }
 				break;
             
