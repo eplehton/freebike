@@ -67,14 +67,14 @@
 
 <body>
 
-    <div id="start" class="instructions">
+    <div id="login" class="instructions">
         
         <p>
         Player id <input id="playerId" type="text" value="" />
         </p>
         
         <p>
-        <button id="startButton">Aloita!</button>
+        <button id="loginButton">Aloita!</button>
         </p>
 
         <br />
@@ -88,9 +88,20 @@
 
     </div>
 
+    <div id="home" class="instructions">
+        <p>
+        <button id="showPracticeInstructions">Harjoittele</button>
+        </p>
+
+        <p>
+        <button id="showGameInstructions">Pelaa</button>
+        </p>
+
+    </div>
+
     <div id="practiceInstructions" class="instructions">
         
-        <p>Lue ohjeet tarkasti!</p>
+        <p>Ohjeet peliin</p>
         <p>Pelissä näet videoita pyöräilijän näkökulmasta. Jossain vaiheessa video pysähtyy ja
         kuva katoaa näkyvistä. Harmaalle taustalle on piirretty ympyröitä.</p>
         
@@ -102,7 +113,7 @@
         <p>Kun olet valmis, paina Tarkista, niin näet oikeat vastaukset.</p>
                 
         
-    <button id="startPractice">Harjoittele</button>
+        <button id="startPractice">Harjoittele</button>
     
     </div>
 
@@ -113,7 +124,18 @@
 
 
     <div id="gameInstructions" class="instructions">
-        <p>Seuraavaksi voidaan aloittaa itse peli!</p>
+        <p>Ohjeet peliin</p>
+        <p>Pelissä näet videoita pyöräilijän näkökulmasta. Jossain vaiheessa video pysähtyy ja
+        kuva katoaa näkyvistä. Harmaalle taustalle on piirretty ympyröitä.</p>
+        
+        <p>Valitse klikkaamalla ne ympyrät, joiden kohdalla oli joku toinen tienkäyttäjä tai näköeste, jonka 
+        takaa joku voisi tulla eteesi.</p> 
+        
+        <p>Voit vaihtaa valintaasi klikkaamalla ympyrää uudestaan.</p>
+
+        <p>Kun olet valmis, paina Tarkista, niin näet oikeat vastaukset.</p>
+    
+        <!-- <p>Seuraavaksi voidaan aloittaa itse peli!</p> -->
     <button id="startGame">Pelaa</button>
     
     </div>

@@ -92,6 +92,7 @@ SAGAME.showMarkers = 1;
 SAGAME.calibInterval = 16;
 SAGAME.clipIdLength = 3; // hom many characters from the beginning will be shown as clip id
 SAGAME.CLIPSETS = null;
+SAGAME.currentClipset = null;
 SAGAME.CLIPPATH = null;
 SAGAME.TARGETS = null;
     
@@ -106,8 +107,6 @@ var query_started_realt = null; // global var which is used when registering not
 var showQueryTimeout = null; // playing event may fire twice
 
 
-
-var currentVideoSet = null; // this is only to enable keyboard shortcuts!
 
 var pointCounter = 0;
 
@@ -124,6 +123,7 @@ function annoTargets2TestQuery(clipname, all_targets) {
     
 	if (cur_trgs === undefined) {
 		alert("No targets with clipname: " + clipname);
+        return;
 	}
 	    
     // annotation may have multiple time-location points: SAGame uses the last one to define the
@@ -1215,32 +1215,43 @@ function setQueryBoxStatus(qbox, status) {
 
 
 
+
 function setupInteraction() {
 	
     $(document).ready(function() {
-        $("#start").show(); 
+        $("#login").show(); 
+        console.log("ready");
+        
     });
     
     // hack, this works for sagame2016
-    $("#startButton").click(function() { 
+    $("#loginButton").click(function() { 
         var playerId = $("#playerId").val();
         if (playerId != "") {
             sessionStorage.setItem("player_id", playerId);
             sessionStorage.setItem("Freebike.SAGame.session_id", Date.now());
             
-            $("#start").hide();
-            $("#practiceInstructions").show();
+            $("#login").hide();
+            $("#home").show();
+            
         } else {
             alert("Please give player id!");
         }
     });
     
+    $("#showPracticeInstructions").click(function() {
+        $("#home").hide();
+        $("#practiceInstructions").show();
+        
+    });
+
     
     $("#startPractice").click(function() {
         $("#practiceInstructions").hide();
         
-        var practiceSet = SAGAME.CLIPSETS.practice;
-        currentVideoSet = practiceSet; // this is only to enable keyboard shortcuts!
+        SAGAME.currentClipset = SAGAME.CLIPSETS.practice; // should this be configurable?
+        var practiceSet = SAGAME.currentClipset;
+        
         
         SAGAME.query_id = 0;
         startGame(SAGAME.query_id, practiceSet)
@@ -1252,24 +1263,24 @@ function setupInteraction() {
             if (SAGAME.query_id < practiceSet.length) {
                 startGame(SAGAME.query_id, practiceSet);
             } else {
-                $("#gameInstructions").show();
+                $("#home").show();
+                // $("#gameInstructions").show();
             }
+            //SAGAME.query_id += 1;
+            //if (SAGAME.query_id < practiceSet.length) {
+            //    startGame(SAGAME.query_id, practiceSet);
+            //} else {
+            //    $("#gameInstructions").show();
+            //}
         })
         
     })
     
-    // hack, this works for fl2016
+    
     $("#showGameInstructions").click(function() {
-        var playerId = $("#playerId").val();
-        if (playerId != "") {
-            sessionStorage.setItem("player_id", playerId);
-            sessionStorage.setItem("Freebike.SAGame.session_id", Date.now());
-            
-            $("#start").hide();
-            $("#gameInstructions").show();
-        } else {
-            alert("Please give player id!");
-        }
+        $("#home").hide();
+        $("#gameInstructions").show();
+        SAGAME.currentClipset = SAGAME.CLIPSETS.game; // default behaviour
     });
 
     
@@ -1278,11 +1289,14 @@ function setupInteraction() {
         
         var queriesBeforeCalibration = SAGAME.calibInterval;
         
-        var videoSet = SAGAME.CLIPSETS.game;
-        currentVideoSet = videoSet; // this is only to enable keyboard shortcuts!
+        var videoSet = SAGAME.currentClipset;
+       
         if (SAGAME.randomizeOrder == 1)  {
             shuffleArray(videoSet);
+            // SAGAME.currentClipset = videoSet; // is it necessary to do this? 
         }
+        
+        
         
         function nextClip() {
             queriesBeforeCalibration -= 1;
@@ -1338,16 +1352,16 @@ function setupInteraction() {
 		switch (event.which) {
 			case "a".charCodeAt(0):
 
-                if ((SAGAME.query_id+1) < currentVideoSet.length) {            
+                if ((SAGAME.query_id+1) < SAGAME.CLIPSETS.currentClipset.length) {            
                     SAGAME.query_id += 1;
-                    startGame(SAGAME.query_id, currentVideoSet);
+                    startGame(SAGAME.query_id, SAGAME.CLIPSETS.currentClipset);
                 }
 				break;
 			case "z".charCodeAt(0):
 
-                if ((SAGAME.query_id-1) < currentVideoSet.length) {                            
+                if ((SAGAME.query_id-1) < SAGAME.CLIPSETS.currentClipset.length) {                            
                     SAGAME.query_id -= 2;;
-                    startGame(SAGAME.query_id, currentVideoSet);
+                    startGame(SAGAME.query_id, SAGAME.CLIPSETS.currentClipset);
                 }
 				break;
             

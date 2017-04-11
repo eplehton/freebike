@@ -17,6 +17,46 @@
     <script language="javascript" type="text/javascript" src="js/sagame.js"></script>
 	<script language="javascript" type="text/javascript">
     
+        function setupInteractionFL2016() {
+    
+            $("#selectGameAB").click(function() {
+                $("#home").hide();
+                $("#gameInstructions").show();
+                SAGAME.currentClipset = SAGAME.CLIPSETS.AB; // default behaviour
+            });
+
+            $("#selectGameC").click(function() {
+                $("#home").hide();
+                $("#gameInstructions").show();
+                SAGAME.currentClipset = SAGAME.CLIPSETS.C; // default behaviour
+            });
+
+            $("#selectGameD1").click(function() {
+                $("#home").hide();
+                $("#gameInstructions").show();
+                SAGAME.currentClipset = SAGAME.CLIPSETS.D1; // default behaviour
+            });
+            
+            $("#selectGameD2").click(function() {
+                $("#home").hide();
+                $("#gameInstructions").show();
+                SAGAME.currentClipset = SAGAME.CLIPSETS.D2; // default behaviour
+            });
+            
+            $("#selectGameF").click(function() {
+                $("#home").hide();
+                $("#gameInstructions").show();
+                SAGAME.currentClipset = SAGAME.CLIPSETS.F; // default behaviour
+            });
+            
+            $("#selectGameOngelmat").click(function() {
+                $("#home").hide();
+                $("#gameInstructions").show();
+                SAGAME.currentClipset = SAGAME.CLIPSETS.Ongelmat; // default behaviour
+            });
+        }
+
+    
     
         //SAGAME.sagameStyle = 'mc_comment';
         SAGAME.sagameStyle = 'selectone';
@@ -37,8 +77,11 @@
         //var clipsets_json = 'js/trukki_f_alkuiset_clipsets_20170209.json';
         //var targets_json = 'js/trukki_f_alkuiset_targets_20160209.json';
         
-        var clipsets_json = 'js/trukki_clipsets_a_ja_b_alkuiset_20160314.json';
-        var targets_json = 'js/trukki_targets_a_ja_b_alkuiset_20160314.json';
+        //var clipsets_json = 'js/trukki_clipsets_a_ja_b_alkuiset_20160314.json';
+        //var targets_json = 'js/trukki_targets_a_ja_b_alkuiset_20160314.json';
+        
+        var clipsets_json = 'js/fl2016_clipsets_20170327.json';
+        var targets_json = 'js/fl2016_targets_20170327.json';
         
         
         
@@ -61,10 +104,12 @@
             
             req1.done( function() { 
                 var req2 = loadTargetsFrom(targets_json);
-                console.log("2");
+                
                 req2.done( function() { 
-                    console.log("3");
-                    setupInteraction(); 
+                    
+                    setupInteraction();
+                    setupInteractionFL2016(); 
+                    
                 }).fail(function(err) {
                     console.log("Loading targets failed")
                     console.log(err);
@@ -80,27 +125,43 @@
 
 <body>
 
-    <div id="start" class="instructions">
+    <div id="login" class="instructions">
         
         <p>
         Anna pelaajatunnuksesi <input id="playerId" type="text" value="" />
         </p>
         
         <p>
-        <button id="showGameInstructions">Aloita!</button>
+        <button id="loginButton">Aloita</button>
+        
+        
+        <!-- <button id="showGameInstructions">Aloita</button> -->
         </p>
 
     </div>
 
-    <!-- <div id="practiceInstructions" class="instructions">
-        <p></p>
-    <button id="startPractice">Harjoittele</button> -->
+    <div id="home" class="instructions">
+        <p>
+        <button id="showPracticeInstructions">Harjoittele</button>
+        </p>
+
+        <p><button id="selectGameAB">Pelaa A ja B</button></p>
+        <p><button id="selectGameC">Pelaa C</button></p>
+        <p><button id="selectGameD1">Pelaa D1</button></p>
+        <p><button id="selectGameD2">Pelaa D2</button></p>
+        <p><button id="selectGameF">Pelaa F</button></p>
+        <p><button id="selectGameOngelmat">Ongelmat</button></p>
+
+    </div>
+
     
     </div>
 
     <div id="endInstructions" class="instructions">
         <p>Hienoa! Pelasit kaikki videot.</p>
     </div>
+
+    
 
 
     <div id="gameInstructions" class="instructions">
