@@ -98,6 +98,7 @@ SAGAME.TARGETS = null;
 SAGAME.query_id = -1; // to hold the current position in the query data
 
 SAGAME.currentClipset = null;
+SAGAME.currentGameName = 'N/A';
 SAGAME.currentPoints = 0;
 SAGAME.currentMaxPoints = 0;
     
@@ -255,9 +256,7 @@ function checkAnswersMultipleChoice() {
     } else {
         $("#targethitplayer")[0].play();
     }
-    
-    // remove? $(videoplayer)[0].style.display = "block";
-    
+        
     console.log(pointCounter);
     console.log(pointGain);
     pointCounter += pointGain; // replace with SAGAME attribute
@@ -473,7 +472,7 @@ function checkAnswersSelectOne() {
         }
         
         
-        console.log(SAGAME.description);
+        // console.log(SAGAME.description);
         
         if (status == 'present') {
             //var qbt = qbox.getElementsByClassName("query_box_target").item(0);
@@ -590,17 +589,16 @@ function checkAnswersSelectOne() {
         $("#targethitplayer")[0].play();
     }
     
-    // remove as obsolate? $(videoplayer)[0].style.display = "block";
+    // setup the points
+    SAGAME.currentMaxPoints += 1; // This is simple, for each video you can get one point in select-one kind of game
     
-    console.log(pointCounter);
     console.log(pointGain);
-    pointCounter += pointGain;
-    if (pointCounter < 0) {
-        pointCounter = 0;
+    SAGAME.currentPoints += pointGain;
+    if (SAGAME.currentPoints < 0) {
+        SAGAME.currentPoints = 0;
     }
     
-    //$(points)[0].style.width = (1 + 20*pointCounter) + "px";
-    $("#points").html ('<p>Pisteet ' + pointCounter + '</p>');
+    $("#points").html ('<p>Pisteet ' + SAGAME.currentPoints + '</p>');
 	
     
     $("#videoMask").hide();
@@ -626,6 +624,21 @@ function downloadDexieTable(tableName) {
     }).catch( function(e) { console.log("Error retrieving" + e); });
     
 }
+
+
+
+
+function getScores(gameName) {
+    var scoresStr = sessionStorage.getItem("Freebike.SAGame.scores");
+    var scores = JSON.parse(scoresStr);
+    if (scores.hasOwnProperty(gameName)) {
+        return scores[gameName];
+    } else {
+        return null;
+    }
+}
+
+
 
 /**
  * Load clipsets from json file.
@@ -773,15 +786,6 @@ function registerPresence(query, query_id, box_id, answer, query_started_realt) 
 }
 
 
-//~ function rel2Client(videoplayer, relx, rely) {
-	//~ /*
-		//~ Converts video relative coordinates to client coordinates.
-		//~ Should this be in a common library?
-	//~ */
-    //~ var x = relx * videoplayer.offsetWidth + videoplayer.offsetLeft
-    //~ var y = rely * videoplayer.offsetHeight + videoplayer.offsetTop
-    //~ return [x, y]
-//~ } 
 
 //var RAI_qi = null;
 
@@ -829,6 +833,9 @@ function createQueryLocation(locData, query_id, box_id) {
 
 
 function showQuery(query) {
+    /**
+        This functions shows the query / question for the player.
+    */
 	console.log("showQuery called with:");
     console.log(query);
     console.log(query.items);
@@ -858,7 +865,9 @@ function showQuery(query) {
 		var locationData = query_items[box_id];
         var qbox = createQueryLocation(locationData, query_id, box_id);
         
-        // refactor: create this so that you can just plug different functions in depending on the query/feedback style 
+        // REFACTOR THIS: 
+        // Create this so that you can just plug different functions in depending on the query/feedback style 
+        // The essential this is that you need to have different callback for each style. 
         if (SAGAME.sagameStyle == 'mc_comment') {
             console.log("register mc_comment choice");
             
@@ -1051,8 +1060,6 @@ function playVideo(query_id, videoset) {
 
         $("#videoMask").show();
         
-        //saveTestAnswers();
-        //test_answers = []; // clear it, so that is wont be duplicated
     }
     
     function run() {
@@ -1194,13 +1201,12 @@ function toggleQueryBox(query_id, box_id) {
 
 
 function getQueryBoxStatus(qbox) {
+    /*
+        Helper function for knowing if the box/circle/location is selected or not.
+    */
     
-    //var bgcolor = qbox.style.backgroundColor;
     var borderColor = qbox.style.borderColor; 
-        
-    //var qbt = qbox.getElementsByClassName("query_box_target").item(0);
-    //var bgcolor = qbt.style.backgroundColor;
-	
+        	
 	var status = null;
 	if (borderColor != query_box_present_color) {
 		status = 'notpresent';
@@ -1211,13 +1217,14 @@ function getQueryBoxStatus(qbox) {
 }
 
 function setQueryBoxStatus(qbox, status) {
-	//var qbt = qbox.getElementsByClassName("query_box_target").item(0);
+	/**
+        Helper function for setting selecting/unselecting box/circle/location.
+    */
+
 	var borderColor = 'black';
 	if (status == 'present') {
 		borderColor = query_box_present_color;
 	}
-	//qbt.style.backgroundColor = bgcolor;
-    //qbox.style.backgroundColor = bgcolor;
     qbox.style.borderColor = borderColor;
     
 	return status;
@@ -1234,12 +1241,29 @@ function setupInteraction() {
         
     });
     
+    $("#goHomeAfterGameButton").click(function() {
+        $("#endInstructions").hide()
+        $("#home").show();
+    });
+    
     // hack, this works for sagame2016
     $("#loginButton").click(function() { 
         var playerId = $("#playerId").val();
         if (playerId != "") {
-            sessionStorage.setItem("player_id", playerId);
-            sessionStorage.setItem("Freebike.SAGame.session_id", Date.now());
+            sessionStorage.setItem("player_id", playerId); // who is playing 
+            sessionStorage.setItem("Freebike.SAGame.session_id", Date.now()); // unique session
+            sessionStorage.setItem("Freebike.SAGame.scores", JSON.stringify({}) ); // for storing the scores
+            
+                
+            // hack, this should not be here!!!! just to make trukki game to work
+            showScores('Harjoittelu');
+            showScores('AB');
+            showScores('C');
+            showScores('D1');
+            showScores('D2');
+            showScores('F');
+                
+                
             
             $("#login").hide();
             $("#home").show();
@@ -1248,18 +1272,19 @@ function setupInteraction() {
             alert("Please give player id!");
         }
     });
-    
+        
     $("#showPracticeInstructions").click(function() {
         $("#home").hide();
         $("#practiceInstructions").show();
         
     });
 
-    
+    /*
     $("#startPractice").click(function() {  // consider modifying this so that practise is just one game set?
         $("#practiceInstructions").hide();
         
         SAGAME.currentClipset = SAGAME.CLIPSETS.practice; // should this be configurable?
+        SAGAME.currentGameName = 'Harjoittelu';
         SAGAME.currentPoints = 0;
         SAGAME.currentMaxPoints = 0;
         
@@ -1276,6 +1301,11 @@ function setupInteraction() {
             if (SAGAME.query_id < practiceSet.length) {
                 playVideo(SAGAME.query_id, practiceSet);
             } else {
+
+                setScores(SAGAME.currentGameName, { points : SAGAME.currentPoints ,
+                                                   maxPoints : SAGAME.currentMaxPoints } );
+                
+                showScores(SAGAME.currentGameName);                 
                 $("#home").show();
                 // $("#gameInstructions").show();
             }
@@ -1288,6 +1318,13 @@ function setupInteraction() {
         })
         
     })
+    */
+    
+    $("#showPracticeInstructions").click(function() {
+        $("#home").hide();
+        $("#practiceInstructions").show();
+        SAGAME.currentClipset = SAGAME.CLIPSETS.practice; // default behaviour
+    });
     
     
     $("#showGameInstructions").click(function() {
@@ -1297,8 +1334,22 @@ function setupInteraction() {
     });
 
     
-    $("#startGame").click(function() { // consider creating a function which get a parameter game set
+    $("#startGame").click(function() {
         $("#gameInstructions").hide();
+        startGame();
+    });
+    
+    $("#startPractice").click(function() {
+        $("#practiceInstructions").hide();
+        startGame();
+    });
+        
+    function startGame() {
+        /**
+            UI function to play a game over the clipset specified in SAGAME global object
+        */
+        
+
 
         SAGAME.currentPoints = 0; 
         SAGAME.currentMaxPoints = 0;
@@ -1320,7 +1371,16 @@ function setupInteraction() {
             if (SAGAME.query_id < videoSet.length) {
                 playVideo(SAGAME.query_id, videoSet);
             } else {
-                $("#endInstructions").show();
+                // The player has finished this clipset. 
+                // Now it is time to show end instruction but also to save the points from this 
+                // clipset for showing feedback.
+                setScores(SAGAME.currentGameName, { points : SAGAME.currentPoints ,
+                                                   maxPoints : SAGAME.currentMaxPoints } );
+                
+                showScores(SAGAME.currentGameName);
+                                                                   
+                $("#endInstructions").show();                                   
+                
             }
         }
         
@@ -1352,8 +1412,7 @@ function setupInteraction() {
         
         SAGAME.query_id = -1;
         nextClip();
-       
-    });
+    }
     
     $("#checkbutton").click(function() {
         var ev = new ExpEvent($("#videoplayer")[0].src, 'checkAnswersPressed', -1);
@@ -1368,16 +1427,16 @@ function setupInteraction() {
 		switch (event.which) {
 			case "a".charCodeAt(0):
 
-                if ((SAGAME.query_id+1) < SAGAME.CLIPSETS.currentClipset.length) {            
+                if ((SAGAME.query_id+1) < SAGAME.currentClipset.length) {            
                     SAGAME.query_id += 1;
-                    playVideo(SAGAME.query_id, SAGAME.CLIPSETS.currentClipset);
+                    playVideo(SAGAME.query_id, SAGAME.currentClipset);
                 }
 				break;
 			case "z".charCodeAt(0):
 
-                if ((SAGAME.query_id-1) < SAGAME.CLIPSETS.currentClipset.length) {                            
+                if ((SAGAME.query_id-1) < SAGAME.currentClipset.length) {                            
                     SAGAME.query_id -= 2;;
-                    playVideo(SAGAME.query_id, SAGAME.CLIPSETS.currentClipset);
+                    playVideo(SAGAME.query_id, SAGAME.currentClipset);
                 }
 				break;
             
@@ -1407,3 +1466,29 @@ function setupInteraction() {
 
 }
 	
+
+function setScores(gameName, scores) { 
+    var allScoresStr = sessionStorage.getItem("Freebike.SAGame.scores");
+    var allScores = JSON.parse(allScoresStr);
+    
+    allScores[gameName] = scores;
+    
+    sessionStorage.setItem("Freebike.SAGame.scores", JSON.stringify(allScores));
+    
+}
+
+
+
+function showScores(gameName) {
+    /**
+        Update the scores display (using the game name and element id)
+    */
+    var scores = getScores(gameName);
+    var txt = "";
+    if (scores == null) {
+        txt = 'Ei pelattu vielä';
+    } else {
+        txt = scores.points + "/" + scores.maxPoints;
+    }
+    $("#scores_"+ gameName).html(txt);
+}

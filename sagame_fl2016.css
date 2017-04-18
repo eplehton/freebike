@@ -73,6 +73,17 @@ body {
 	border-radius: 2ex;
 }
 
+#gameLabel {
+	text-align: left;
+}	
+
+#gameLabelContainer {
+	
+	padding: 2ex;
+	margin-left: 40%;
+    text-align: left;
+}
+
 .banner {
 	
 	width: 80%;
