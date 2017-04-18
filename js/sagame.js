@@ -98,7 +98,7 @@ SAGAME.TARGETS = null;
 SAGAME.query_id = -1; // to hold the current position in the query data
 
 SAGAME.currentClipset = null;
-SAGAME.currentGameName = 'N/A';
+SAGAME.currentGameName = '';
 SAGAME.currentPoints = 0;
 SAGAME.currentMaxPoints = 0;
     
@@ -1323,6 +1323,7 @@ function setupInteraction() {
     $("#showPracticeInstructions").click(function() {
         $("#home").hide();
         $("#practiceInstructions").show();
+        SAGAME.currentGameName = 'Harjoittelu';
         SAGAME.currentClipset = SAGAME.CLIPSETS.practice; // default behaviour
     });
     
@@ -1330,6 +1331,7 @@ function setupInteraction() {
     $("#showGameInstructions").click(function() {
         $("#home").hide();
         $("#gameInstructions").show();
+        SAGAME.currentGameName = 'Peli';
         SAGAME.currentClipset = SAGAME.CLIPSETS.game; // default behaviour
     });
 
