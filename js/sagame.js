@@ -101,6 +101,7 @@ SAGAME.currentClipset = null;
 SAGAME.currentGameName = '';
 SAGAME.currentPoints = 0;
 SAGAME.currentMaxPoints = 0;
+SAGAME.currentQueries = null; // to hold query data
     
 var test_queries; // to hold query data
 
@@ -196,7 +197,7 @@ function checkAnswers() {
 
 function checkAnswersMultipleChoice() {
     var query_id = SAGAME.query_id;
-    var query = test_queries[query_id];
+    var query = SAGAME.currentQueries[query_id];
     var had_miss = false;
     var pointGain = 0;
 
@@ -286,7 +287,7 @@ function checkAnswersYesNo() {
     */
     var query_id = SAGAME.query_id;
     
-    var query = test_queries[query_id];
+    var query = SAGAME.currentQueries[query_id];
 
     
     var had_miss = false;
@@ -452,7 +453,7 @@ function checkAnswersSelectOne() {
     */
     var query_id = SAGAME.query_id;
     
-    var query = test_queries[query_id];
+    var query = SAGAME.currentQueries[query_id];
 
     
     var had_miss = false;
@@ -1044,11 +1045,15 @@ function showVideoMask() {
 	 
 
 
-function playVideo(query_id, videoset) {
+//function playVideo(query_id, videoset) {
+
+function playVideo() {
     /*
         This plays a single video in the game.
     */
-    
+    var query_id = SAGAME.query_id;
+
+    var videoset = SAGAME.currentClipset;
     
 	console.log("startGame called");
     
@@ -1068,14 +1073,16 @@ function playVideo(query_id, videoset) {
         $("#videoMask").show();
         
         
-        if (query_id < test_queries.length) {
-            var query = test_queries[query_id];
+        if (query_id < SAGAME.currentQueries.length) {
+            var query = SAGAME.currentQueries[query_id];
 
         
             
             $("#videoplayer")[0].src = SAGAME.CLIPPATH + query.clip;
             var src = $("#videoplayer")[0].src; // this will be used to check that the timeout function does not show queries when changing videos
-                    
+            
+            console.log(query);
+            
             $("#currentvideo").html( '('+ (query_id+1) +'/'+ videoset.length +') ' + query.clip.substring(0, SAGAME.clipIdLength) );
 
             
@@ -1172,9 +1179,11 @@ function playVideo(query_id, videoset) {
     }
     
     //query_id += 1;
-    if (query_id == 0) {
-        test_queries = loadQueries(videoset);
-    }
+    /*if (query_id == 0) {
+        SAGAME.currentQueries = loadQueries(videoset);
+    } 
+    // this function is changed to rely on SAGAME object
+    */ 
 
     prepare();
     setTimeout( run, 500);
@@ -1355,10 +1364,12 @@ function setupInteraction() {
 
         SAGAME.currentPoints = 0; 
         SAGAME.currentMaxPoints = 0;
+        var videoSet = SAGAME.currentClipset; 
+        SAGAME.currentQueries = loadQueries(videoSet);
         
         var queriesBeforeCalibration = SAGAME.calibInterval;
         
-        var videoSet = SAGAME.currentClipset; 
+        
         
         if (SAGAME.randomizeOrder == 1)  {
             shuffleArray(videoSet);
@@ -1371,7 +1382,10 @@ function setupInteraction() {
             queriesBeforeCalibration -= 1;
             SAGAME.query_id += 1;
             if (SAGAME.query_id < videoSet.length) {
-                playVideo(SAGAME.query_id, videoSet);
+            
+                playVideo();
+                // playVideo(SAGAME.query_id, videoSet); 
+
             } else {
                 // The player has finished this clipset. 
                 // Now it is time to show end instruction but also to save the points from this 
@@ -1431,17 +1445,25 @@ function setupInteraction() {
 
                 if ((SAGAME.query_id+1) < SAGAME.currentClipset.length) {            
                     SAGAME.query_id += 1;
-                    playVideo(SAGAME.query_id, SAGAME.currentClipset);
+                    playVideo();
+                    //playVideo(SAGAME.query_id, SAGAME.currentClipset);
                 }
 				break;
+                
 			case "z".charCodeAt(0):
-
                 if ((SAGAME.query_id-1) < SAGAME.currentClipset.length) {                            
                     SAGAME.query_id -= 2;;
-                    playVideo(SAGAME.query_id, SAGAME.currentClipset);
+                    playVideo();
+                    //playVideo(SAGAME.query_id, SAGAME.currentClipset);
                 }
 				break;
             
+            case "r".charCodeAt(0): // replay
+                SAGAME.query_id -= 1;
+                playVideo();
+                //playVideo(SAGAME.query_id, SAGAME.currentClipset);
+                break;
+                
 			case 'c'.charCodeAt(0):
 				var mask = $("#videoMask")[0];
 				
