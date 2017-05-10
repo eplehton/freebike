@@ -102,12 +102,13 @@ SAGAME.currentGameName = '';
 SAGAME.currentPoints = 0;
 SAGAME.currentMaxPoints = 0;
 SAGAME.currentQueries = null; // to hold query data
+SAGAME.showQueryTimeout = null; // global timeout to for query firing 
     
 var test_queries; // to hold query data
 
 var query_box_present_color = 'yellow';
 var query_started_realt = null; // global var which is used when registering not presence (should be something neater...)
-var showQueryTimeout = null; // playing event may fire twice
+
 
 
 
@@ -122,7 +123,7 @@ function annoTargets2TestQuery(clipname, all_targets) {
 	var cur_trgs = all_targets[clipname];
 	
     console.log(clipname);
-    console.log(all_targets);
+    //console.log(all_targets);
     
 	if (cur_trgs === undefined) {
 		alert("No targets with clipname: " + clipname);
@@ -690,8 +691,12 @@ function loadQueries(videoset) {
 	
 	for (var i=0; i<cliplist.length; i++) {
 		var clipname = cliplist[i];
-		var query = annoTargets2TestQuery(clipname, all_targets);
-		test_queries.push(query);
+        try {
+            var query = annoTargets2TestQuery(clipname, all_targets);
+            test_queries.push(query);
+        } catch (e) {
+            alert("Hups! Ongelmia kohteiden kanssa videossa: "+ clipname); 
+        }
 	}
 	return test_queries;
 }
@@ -1068,7 +1073,7 @@ function playVideo() {
     }
     
     function run() {
-        showQueryTimeout = 0; // global! 
+        SAGAME.showQueryTimeout = 0; // global! 
         
         $("#videoMask").show();
         
@@ -1090,7 +1095,9 @@ function playVideo() {
             
             $("#videoplayer").off("playing");              
             $("#videoplayer").bind('playing', function() {
-                // Called once after the video has started playing.
+                // This is called ONCE after the video has started playing.
+                // Here we set showQueryTimeout to show the queries.
+                
                 // There is a short latency (100-200 ms) before the video really starts 
                 // playing after calling play. Therefore it is better to wait until the first
                 // playing event before setting the timeout. 
@@ -1099,12 +1106,12 @@ function playVideo() {
                 // Note that it is not enough to off-bind the event on the first call: The
                 // event may be able to fire again before the binding is removed, which leads to
                 // double queries to be shown.
-                if (showQueryTimeout != 0) { 
+                if (SAGAME.showQueryTimeout != 0) { 
                     $("#videoplayer").off("playing");              
                     return; }
                 
                 
-                showQueryTimeout = setTimeout(function() {
+                SAGAME.showQueryTimeout = setTimeout(function() {
                     if (src != $("#videoplayer")[0].src) {
                         console.log(src);
                         console.log($("#videoplayer")[0].src);
@@ -1186,7 +1193,17 @@ function playVideo() {
     */ 
 
     prepare();
-    setTimeout( run, 500);
+    setTimeout( run, 500);    
+}
+
+
+function finishVideo() {
+/**
+ * This functions cleans up everything if video is stopped abruptly and when it ends normally. 
+ */
+    $("#videoplayer").hide();
+    clearTimeout(SAGAME.showQueryTimeout);
+    $("#videoplayer")[0].src = null;
     
 }
 
@@ -1254,6 +1271,13 @@ function setupInteraction() {
         $("#endInstructions").hide()
         $("#home").show();
     });
+
+    $("#exitGameButton").click(function() {
+        // consider making exitVideo function
+        finishVideo(); 
+        $("#home").show();
+    });
+
     
     // hack, this works for sagame2016
     $("#loginButton").click(function() { 
@@ -1444,6 +1468,8 @@ function setupInteraction() {
 			case "a".charCodeAt(0):
 
                 if ((SAGAME.query_id+1) < SAGAME.currentClipset.length) {            
+                    finishVideo();
+                    
                     SAGAME.query_id += 1;
                     playVideo();
                     //playVideo(SAGAME.query_id, SAGAME.currentClipset);
@@ -1452,14 +1478,17 @@ function setupInteraction() {
                 
 			case "z".charCodeAt(0):
                 if ((SAGAME.query_id-1) < SAGAME.currentClipset.length) {                            
-                    SAGAME.query_id -= 2;;
+                    finishVideo();
+                    
+                    SAGAME.query_id -= 1;;
                     playVideo();
                     //playVideo(SAGAME.query_id, SAGAME.currentClipset);
                 }
 				break;
             
             case "r".charCodeAt(0): // replay
-                SAGAME.query_id -= 1;
+                finishVideo();
+                
                 playVideo();
                 //playVideo(SAGAME.query_id, SAGAME.currentClipset);
                 break;
