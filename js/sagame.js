@@ -494,7 +494,7 @@ function checkAnswersSelectOne() {
             if (SAGAME.feedback == 'description') {
                 pointGain += -1;
 
-                var txt = qitem.description + "<br /> Menetit pisteen." ;
+                var txt = "Menetit pisteen!<br />" + qitem.description;
                 
                 $("#"+ query_feedback_id).html(txt);
                 $("#"+ query_feedback_id).show(); 
@@ -824,6 +824,10 @@ function createQueryLocation(locData, query_id, box_id) {
     qbox.style.display = "block";
     qfeedback.style.display = "none";
     
+    // relative sizing of boxes: added 2017-05-11
+    qbox.style.width = 0.15 * vplayer.offsetWidth + "px"; 
+    qbox.style.height = 0.15 * vplayer.offsetWidth + "px"; 
+    
     // positioning
     var clientxy = videoToClient(vplayer, locData.x, locData.y);
     var centering =	[qbox.offsetWidth * 0.5, qbox.offsetHeight * 0.5];
@@ -1080,18 +1084,12 @@ function playVideo() {
         
         if (query_id < SAGAME.currentQueries.length) {
             var query = SAGAME.currentQueries[query_id];
-
-        
             
-            $("#videoplayer")[0].src = SAGAME.CLIPPATH + query.clip;
-            var src = $("#videoplayer")[0].src; // this will be used to check that the timeout function does not show queries when changing videos
+            var src = SAGAME.CLIPPATH + query.clip;
+            // this will be used to check that the timeout function does not show queries when changing videos
             
             console.log(query);
             
-            $("#currentvideo").html( '('+ (query_id+1) +'/'+ videoset.length +') ' + query.clip.substring(0, SAGAME.clipIdLength) );
-
-            
-            console.log("Playing " + $("#videoplayer")[0].src);
             
             $("#videoplayer").off("playing");              
             $("#videoplayer").bind('playing', function() {
@@ -1112,12 +1110,13 @@ function playVideo() {
                 
                 
                 SAGAME.showQueryTimeout = setTimeout(function() {
+                    /* NOT NECESSARY ANYMORE
                     if (src != $("#videoplayer")[0].src) {
                         console.log(src);
                         console.log($("#videoplayer")[0].src);
                         console.log("showQuery not called, because videoplayer has a different source! This should happen when jumping with a and z.");
                         return;
-                    }
+                    }*/
                     
                     showQuery(query); 
                     
@@ -1151,14 +1150,22 @@ function playVideo() {
             } else {
                 $("#videoMask").fadeOut(500);
             }
-            
-            $("#videoplayer")[0].play();
-            
+                        
             if (SAGAME.showMarkers) {
                 showMarkers(); // show the markers now, so that we get the surface enter to the camera approx. when the video starts playing
             }
+            
+            
+            $("#currentvideo").html( '('+ (query_id+1) +'/'+ videoset.length +') ' + query.clip.substring(0, SAGAME.clipIdLength) );
+
+            // set the source and start as soon as it is loaded enough
+            $("#videoplayer")[0].src = src;
+            $("#videoplayer").on("canplaythrough", function() {
+                $("#videoplayer")[0].play();
+                console.log("Playing " + $("#videoplayer")[0].src);
                 
-            PERF_video_play_called = Date.now();
+                PERF_video_play_called = Date.now();
+            });
             
             
             /* This is an alternative way to time the targets which does not appear to be as precise.
