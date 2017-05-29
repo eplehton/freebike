@@ -298,10 +298,24 @@ function updateTargetList() {
             html +='<select id="target_type" onchange="setCurrentAnnoTargetProperties();">';
             
             
-            html +='<option value="roaduser" '+ isSelected("road_user") + ' >1 Road user</option>';
-            html +='<option value="roaduser_pedestrian" '+ isSelected("pedestrian") + ' >1.1 Pedestrian</option>';
-            html +='<option value="roaduser_bicycle" '+ isSelected("bicycle") + ' >1.2. Bicycle</option>';
-            html +='<option value="roaduser_car" '+ isSelected("car") + ' >1.3. Car</option>';
+            html +='<option value="T" '+ isSelected("T") + ' >Trukki</option>';
+            html +='<option value="Tb" '+ isSelected("Tb") + ' >Trukki (bluespot)</option>';
+            html +='<option value="Tp" '+ isSelected("Tp") + ' >Trukki (peilissä)</option>';
+            html +='<option value="Tbp" '+ isSelected("Tbp") + ' >Trukki (bluespot peilissä)</option>';
+
+            html +='<option value="J" '+ isSelected("J") + ' >Jalankulkija</option>';
+            html +='<option value="Jp" '+ isSelected("Jp") + ' >Jalankulkija (peilissä)</option>';
+            
+            html +='<option value="Y" '+ isSelected("Y") + ' >Ympäristö</option>';
+            html +='<option value="Yp" '+ isSelected("Yp") + ' >Ympäristö (peilissä)</option>';
+
+            html +='<option value="nothing" '+ isSelected("nothing") + ' >Empty</option>';            
+            html +='<option value="other" '+ isSelected("other") + ' >Other</option>';
+            
+            html +='<option value="roaduser" '+ isSelected("roaduser") + ' >1 Road user</option>';
+            html +='<option value="roaduser_pedestrian" '+ isSelected("roaduser_pedestrian") + ' >1.1 Pedestrian</option>';
+            html +='<option value="roaduser_bicycle" '+ isSelected("roaduser_bicycle") + ' >1.2. Bicycle</option>';
+            html +='<option value="roaduser_car" '+ isSelected("roaduser_car") + ' >1.3. Car</option>';
 
             html +='<option value="occlusion" '+ isSelected("occlusion") + ' >2 Occlusion</option>';
             html +='<option value="occlusion_mroad" '+ isSelected("occlusion_mroad") + '>2.1 Merging road</option>';
@@ -310,9 +324,6 @@ function updateTargetList() {
             html +='<option value="occlusion_stoppedveh" '+ isSelected("occlusion_stoppedveh") + ' >2.4 Stopped vehicle</option>';
             html +='<option value="occlusion_busstop" '+ isSelected("occlusion_busstop") + ' >2.5 Bus stop</option>';
             
-            html +='<option value="nothing" '+ isSelected("nothing") + ' >3 Empty</option>';
-            
-            html +='<option value="other" '+ isSelected("other") + ' >4 Other</option>';
             
             html +='</select>';
             
@@ -527,6 +538,7 @@ function videoClicked(ev) {
 function updateDisplay() {
         updateTargetIcon();
         updateVideoPositionIndicator();
+        updateTargetList();
 }
 
 
@@ -549,6 +561,7 @@ $(document).ready(function(){
     vplayer.addEventListener("pause", function() {
         clearInterval(update_display_interval_id);
         update_display_interval_id = null;
+        
         
         updateDisplay();
         // save the anno targets when video pauses

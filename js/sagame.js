@@ -149,7 +149,7 @@ function annoTargets2TestQuery(clipname, all_targets) {
 			query.items.push( {target_id: ct.id, 
                                 type: ct.type,
                                 description: ct.description,
-                                x : ct.x.slice(-1).pop(), 
+                                x : ct.x.slice(-1).pop(), // select always the last point for this game: others are for analysis
                                 y : ct.y.slice(-1).pop(),
                                 multiple_choices : ct.multiple_choices } ); 
 		}
@@ -805,7 +805,7 @@ function createQueryLocation(locData, query_id, box_id) {
     var screen = document.getElementById("screen");
 	var vplayer = document.getElementById("videoplayer");
     
-    // create box (circle) elements
+    // create circle (box) elements
     var query_box_id = "query_box_" + query_id + '_' + box_id;
     var qbox = queryBoxTmpl.cloneNode(true);
     qbox.id = query_box_id;
@@ -814,7 +814,6 @@ function createQueryLocation(locData, query_id, box_id) {
     var query_feedback_id = "query_feedback_" + query_id + '_' + box_id;        
     var qfeedback = queryFeedbackTmpl.cloneNode(true);
     qfeedback.id = query_feedback_id;        
-    // qfeedback.innerHTML = "<p>"+ qitem.type + "</p>"; // this is obsolate
     
     // add them to the screen element
     screen.appendChild(qbox);  
@@ -825,8 +824,9 @@ function createQueryLocation(locData, query_id, box_id) {
     qfeedback.style.display = "none";
     
     // relative sizing of boxes: added 2017-05-11
-    qbox.style.width = 0.15 * vplayer.offsetWidth + "px"; 
-    qbox.style.height = 0.15 * vplayer.offsetWidth + "px"; 
+    var circleDiameter = 0.19 * vplayer.offsetWidth;
+    qbox.style.width = circleDiameter + "px"; 
+    qbox.style.height = circleDiameter + "px"; 
     
     // positioning
     var clientxy = videoToClient(vplayer, locData.x, locData.y);
@@ -835,9 +835,19 @@ function createQueryLocation(locData, query_id, box_id) {
     qbox.style.top = (clientxy[1] - centering[1]) + "px"; 
     qbox.style.left = (clientxy[0] - centering[0]) + "px";
     
-    qfeedback.style.top = (clientxy[1] - centering[1] - 100) + "px"; 
+    // feedback position either below or above, depending on the location
+    var feedbackOffset = - circleDiameter;
+    if (clientxy[1] < circleDiameter) {
+        feedbackOffset = 0.6 * circleDiameter;
+    }
+    
+    //qfeedback.style.top = (clientxy[1] - centering[1] + feedbackOffset) + "px"; 
+    //qfeedback.style.left = (clientxy[0] - centering[0]) + "px";
+    
+    qfeedback.style.top = (clientxy[1] + feedbackOffset) + "px"; 
     qfeedback.style.left = (clientxy[0] - centering[0]) + "px";
-        
+    
+    
     return qbox;
 }
 
@@ -951,7 +961,6 @@ function showQuery(query) {
             // Here we setup the callbacks
             function makeCallbackTB(qi, q_id, b_id) {
                 return function() { var status = toggleQueryBox(q_id, b_id); 
-
                                     // the first hit is the answer, so we proceed immediately to the checkAnswers
                                     checkAnswers();
                     
@@ -960,28 +969,7 @@ function showQuery(query) {
                         
             qbox.addEventListener("click", makeCallbackTB(locationData, query_id, box_id), false);
 
-            
-            // The stuff below is related to showing the circle and positioning it
-            //~ var query_feedback_id = "query_feedback_" + query_id + '_' + box_id;        
-            //~ var qfeedback = queryFeedbackTmpl.cloneNode(true);
-            //~ qfeedback.id = query_feedback_id;        
-            //~ qfeedback.innerHTML = "<p>"+ qitem.type + "</p>";
-            
-            //~ screen.appendChild(qbox);  
-            //~ screen.appendChild(qfeedback);  
-            
-            //~ qbox.style.display = "block";
-            //~ qfeedback.style.display = "none";
-            
-            //~ var clientxy = videoToClient(vplayer, qitem.x, qitem.y);
-            //~ var centering =	[qbox.offsetWidth * 0.5, qbox.offsetHeight * 0.5];
-            
-            //~ qbox.style.top = (clientxy[1] - centering[1]) + "px"; 
-            //~ qbox.style.left = (clientxy[0] - centering[0]) + "px";
-            
-            //~ qfeedback.style.top = (clientxy[1] - centering[1] - 100) + "px"; 
-            //~ qfeedback.style.left = (clientxy[0] - centering[0]) + "px";            
-            
+                        
         } else { // yesno
                 
             // Here we setup the callbacks
@@ -1004,27 +992,6 @@ function showQuery(query) {
                             }
                         
             qbox.addEventListener("click", makeCallbackTB(locationData, query_id, box_id), false);
-
-            //~ // The stuff below is related to showing the circle and positioning it
-            //~ var query_feedback_id = "query_feedback_" + query_id + '_' + box_id;        
-            //~ var qfeedback = queryFeedbackTmpl.cloneNode(true);
-            //~ qfeedback.id = query_feedback_id;        
-            //~ qfeedback.innerHTML = "<p>"+ qitem.type + "</p>";
-            
-            //~ screen.appendChild(qbox);  
-            //~ screen.appendChild(qfeedback);  
-            
-            //~ qbox.style.display = "block";
-            //~ qfeedback.style.display = "none";
-            
-            //~ var clientxy = videoToClient(vplayer, qitem.x, qitem.y);
-            //~ var centering =	[qbox.offsetWidth * 0.5, qbox.offsetHeight * 0.5];
-            
-            //~ qbox.style.top = (clientxy[1] - centering[1]) + "px"; 
-            //~ qbox.style.left = (clientxy[0] - centering[0]) + "px";
-            
-            //~ qfeedback.style.top = (clientxy[1] - centering[1] - 100) + "px"; 
-            //~ qfeedback.style.left = (clientxy[0] - centering[0]) + "px";
         
             $("#checkbutton").show();
         }
@@ -1056,7 +1023,202 @@ function showVideoMask() {
 
 //function playVideo(query_id, videoset) {
 
+//~ function playVideo() {
+    //~ /*
+        //~ This plays a single video in the game.
+    //~ */
+    //~ var query_id = SAGAME.query_id;
+
+    //~ var videoset = SAGAME.currentClipset;
+    
+	//~ console.log("startGame called");
+    
+    //~ function prepare() {
+        //~ hideMarkers();
+        //~ $("#nextbutton").hide();
+        
+        //~ clearQueries();
+
+        //~ $("#videoMask").show();
+        
+    //~ }
+    
+    //~ function run() {
+        //~ SAGAME.showQueryTimeout = 0; // global! 
+        
+        //~ $("#videoMask").show();
+        
+        
+        //~ if (query_id < SAGAME.currentQueries.length) {
+            //~ var query = SAGAME.currentQueries[query_id];
+            
+            //~ var src = SAGAME.CLIPPATH + query.clip;
+            //~ // this will be used to check that the timeout function does not show queries when changing videos
+            
+            //~ console.log(query);
+            
+            
+            //~ $("#videoplayer").off("playing");              
+            //~ $("#videoplayer").bind('playing', function() {
+                //~ // This is called ONCE after the video has started playing.
+                //~ // Here we set showQueryTimeout to show the queries.
+                
+                //~ // There is a short latency (100-200 ms) before the video really starts 
+                //~ // playing after calling play. Therefore it is better to wait until the first
+                //~ // playing event before setting the timeout. 
+                
+                //~ // If the timeout is already set, just remove the binding and do nothing.
+                //~ // Note that it is not enough to off-bind the event on the first call: The
+                //~ // event may be able to fire again before the binding is removed, which leads to
+                //~ // double queries to be shown.
+                //~ if (SAGAME.showQueryTimeout != 0) { 
+                    //~ $("#videoplayer").off("playing");              
+                    //~ return; }
+                
+                
+                //~ SAGAME.showQueryTimeout = setTimeout(function() {
+                    //~ /* NOT NECESSARY ANYMORE
+                    //~ if (src != $("#videoplayer")[0].src) {
+                        //~ console.log(src);
+                        //~ console.log($("#videoplayer")[0].src);
+                        //~ console.log("showQuery not called, because videoplayer has a different source! This should happen when jumping with a and z.");
+                        //~ return;
+                    //~ }*/
+                    
+                    //~ showQuery(query); 
+                    
+                    //~ $("#videoplayer")[0].pause();
+                    //~ PERF_video_pause_called = Date.now();
+                    
+                    //~ /*console.log("video play: " + PERF_video_play_called 
+                        //~ + " video paused: "+ PERF_video_pause_called 
+                        //~ + " duration: " + (PERF_video_pause_called - PERF_video_play_called)); */
+                    //~ var latency = $("#videoplayer")[0].currentTime - query.stop_time;
+                    //~ console.log("Stop time: "+ query.stop_time + " Video stopped: "+ $("#videoplayer")[0].currentTime + " latency: "+ latency);
+                    //~ }, 
+                    //~ query.stop_time * 1000);
+                
+                //~ // save the start
+                //~ var ev = new ExpEvent($("#videoplayer")[0].src, 'videoPlaying', $("#videoplayer")[0].currentTime);
+                //~ ev.save();
+                //~ });
+        
+            
+            //~ // getting the markers positioned is tricky, because the video size changes	
+            //~ // during the first 0-500 ms before calling play
+            //~ // It is a MUST to reposition the markers after the size has been set.
+            //~ // //$("#videoplayer").off("resize");
+            //~ // //$("#videoplayer").resize( function() { showMarkers(); });
+            
+            
+            //~ if (SAGAME.showMarkers) {
+                //~ $("#videoMask").fadeOut(500, showMarkers);
+            //~ } else {
+                //~ $("#videoMask").fadeOut(500);
+            //~ }
+                        
+            //~ if (SAGAME.showMarkers) {
+                //~ showMarkers(); // show the markers now, so that we get the surface enter to the camera approx. when the video starts playing
+            //~ }
+            
+            
+            //~ $("#currentvideo").html( '('+ (query_id+1) +'/'+ videoset.length +') ' + query.clip.substring(0, SAGAME.clipIdLength) );
+
+            
+            //~ // can play through is not a good way to start videos: 
+            //~ // at least in Firefox the event may seems to be firing before we are ready to set the event
+            //~ // or something... 
+            
+            //~ $("#videoplayer")[0].src = src;
+            
+            //~ var playCalled = false;
+            
+            //~ function readyToPlayCallback() { 
+                //~ playCalled = true;
+                //~ $("#videoplayer")[0].play();
+                //~ console.log("Playing " + $("#videoplayer")[0].src);
+                //~ PERF_video_play_called = Date.now();
+                //~ $("#videoplayer").show();
+
+            //~ }
+            
+            //~ // set the source and start as soon as it is loaded enough
+            //~ $("#videoplayer").on("canplaythrough", function() {
+                //~ readyToPlayCallback();
+            //~ });
+       
+            //~ // canplaythrough is probably already called before we set the handler
+            //~ if ( ($("#videoplayer")[0].readyState > 3) && (! playCalled) ) {
+                //~ readyToPlayCallback();
+            //~ }
+            
+            
+            
+            //~ /* This is an alternative way to time the targets which does not appear to be as precise.
+            //~ $("#videoplayer").off("timeupdate");  
+            //~ $("#videoplayer").bind('timeupdate', function() {
+                //~ if ($("#videoplayer")[0].currentTime > query.stop_time) {
+                    //~ if (src != $("#videoplayer")[0].src) {
+                        //~ console.log(src);
+                        //~ console.log($("#videoplayer")[0].src);
+                        //~ console.log("showQuery not called, because videoplayer has a different source! This should happen when jumping with a and z.");
+                        //~ return;
+                    //~ }
+                    
+                    //~ console.log("will call showQuery 1");
+                    //~ showQuery(query); 
+                    //~ $("#videoplayer")[0].pause();
+                    //~ console.log("Query stop time: "+ query.stop_time + " Video stopped: "+ $("#videoplayer")[0].currentTime);
+                //~ }
+            //~ });
+            //~ */
+            
+
+
+        //~ } 
+    //~ }
+    
+    //~ //query_id += 1;
+    //~ /*if (query_id == 0) {
+        //~ SAGAME.currentQueries = loadQueries(videoset);
+    //~ } 
+    //~ // this function is changed to rely on SAGAME object
+    //~ */ 
+
+    //~ prepare();
+    //~ setTimeout( run, 500);    
+//~ }
+
+
 function playVideo() {
+
+    
+    function preloadVideo(videoElement, src, callWhenReady) {
+        var req = new XMLHttpRequest();
+        req.open('GET', src, true);
+        req.responseType = 'blob';
+
+        req.onload = function() {
+           // Onload is triggered even on 404
+           // so we need to check the status code
+           if (this.status === 200) {
+              var videoBlob = this.response;
+              var vid = URL.createObjectURL(videoBlob); // IE10+
+              // Video is now downloaded
+              // and we can set it as source on the video element
+              videoElement.src = vid;
+            
+              callWhenReady();
+           }
+        }
+        req.onerror = function() {
+           // Error
+           console.log("Video loading failed");
+        }
+        req.send();
+    }
+    
+
     /*
         This plays a single video in the game.
     */
@@ -1137,35 +1299,64 @@ function playVideo() {
                 });
         
             
-            // getting the markers positioned is tricky, because the video size changes	
-            // during the first 0-500 ms before calling play
-            // It is a MUST to reposition the markers after the size has been set.
-            // //$("#videoplayer").off("resize");
-            // //$("#videoplayer").resize( function() { showMarkers(); });
-            
-            $("#videoplayer").show();
-            
-            if (SAGAME.showMarkers) {
-                $("#videoMask").fadeOut(500, showMarkers);
-            } else {
-                $("#videoMask").fadeOut(500);
-            }
                         
-            if (SAGAME.showMarkers) {
-                showMarkers(); // show the markers now, so that we get the surface enter to the camera approx. when the video starts playing
-            }
             
             
             $("#currentvideo").html( '('+ (query_id+1) +'/'+ videoset.length +') ' + query.clip.substring(0, SAGAME.clipIdLength) );
 
-            // set the source and start as soon as it is loaded enough
-            $("#videoplayer")[0].src = src;
-            $("#videoplayer").on("canplaythrough", function() {
+            
+            //var playCalled = false;
+            
+            function readyToPlayCallback() { 
+                //playCalled = true;
                 $("#videoplayer")[0].play();
-                console.log("Playing " + $("#videoplayer")[0].src);
                 
                 PERF_video_play_called = Date.now();
-            });
+                $("#videoplayer").show();
+                
+                if (SAGAME.showMarkers) {
+                    // show the markers now, so that we get the surface enter to the camera approx. when the video starts playing
+                    // this is important so that it can be used to sync the scene camera
+                    showMarkers(); 
+                }
+                
+                // getting the markers positioned is tricky, because the video size changes	
+                // during the first 0-500 ms before calling play so that markers can in a wrong position
+                //
+                // It is a MUST to reposition the markers after the size has been set.
+                // //$("#videoplayer").off("resize");
+                // //$("#videoplayer").resize( function() { showMarkers(); });
+                
+                if (SAGAME.showMarkers) {
+                    $("#videoMask").fadeOut(500, showMarkers);
+                } else {
+                    $("#videoMask").fadeOut(500);
+                }
+
+                console.log("Playing " + $("#videoplayer")[0].src);                
+
+            }
+            preloadVideo($("#videoplayer")[0], src, readyToPlayCallback);
+
+            
+            // can play through is not a good way to start videos: 
+            // at least in Firefox the event may seems to be firing before we are ready to set the event
+            // or something... 
+            
+            
+            //$("#videoplayer")[0].src = src;
+            
+            
+            // set the source and start as soon as it is loaded enough
+            //$("#videoplayer").on("canplaythrough", function() {
+            //    readyToPlayCallback();
+            //});
+       
+            // canplaythrough is probably already called before we set the handler
+            //if ( ($("#videoplayer")[0].readyState > 3) && (! playCalled) ) {
+            //    readyToPlayCallback();
+            //}
+            
             
             
             /* This is an alternative way to time the targets which does not appear to be as precise.
@@ -1202,6 +1393,8 @@ function playVideo() {
     prepare();
     setTimeout( run, 500);    
 }
+
+
 
 
 function finishVideo() {
