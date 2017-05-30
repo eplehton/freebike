@@ -311,10 +311,10 @@ function updateTargetList() {
 
             
             html +='<option value="J" '+ isSelected("J") + ' >Jalankulkija</option>';
-            html +='<option value="Jp" '+ isSelected("Jp") + ' >Jalankulkija (peilissä)</option>';
+            html +='<option value="Jm" '+ isSelected("Jm") + ' >Jalankulkija peilissä</option>';
             
             html +='<option value="Y" '+ isSelected("Y") + ' >Ympäristö</option>';
-            html +='<option value="Yp" '+ isSelected("Yp") + ' >Ympäristö (peilissä)</option>';
+            html +='<option value="Ym" '+ isSelected("Ym") + ' >Ympäristö peilissä</option>';
 
             html +='<option value="nothing" '+ isSelected("nothing") + ' >Empty</option>';            
             html +='<option value="other" '+ isSelected("other") + ' >Other</option>';
