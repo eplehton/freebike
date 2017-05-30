@@ -299,10 +299,17 @@ function updateTargetList() {
             
             
             html +='<option value="T" '+ isSelected("T") + ' >Trukki</option>';
-            html +='<option value="Tb" '+ isSelected("Tb") + ' >Trukki (bluespot)</option>';
-            html +='<option value="Tp" '+ isSelected("Tp") + ' >Trukki (peilissä)</option>';
-            html +='<option value="Tbp" '+ isSelected("Tbp") + ' >Trukki (bluespot peilissä)</option>';
+            html +='<option value="T_cuem" '+ isSelected("T_cuem") + ' >Trukki (vihje peilissä)</option>';
+            html +='<option value="T_cueb" '+ isSelected("T_cueb") + ' >Trukki (vihje bluespot)</option>';
+            
+            html +='<option value="Tb" '+ isSelected("Tb") + ' >Trukin bluespot</option>';
 
+            html +='<option value="Tb_cuem" '+ isSelected("T_cuebm") + ' >Trukin bluespot (vihje peilissä)</option>';
+            
+            html +='<option value="Tm" '+ isSelected("Tm") + ' >Trukki peilissä</option>';
+            html +='<option value="Tbm" '+ isSelected("Tbm") + ' >Trukin bluespot peilissä</option>';
+
+            
             html +='<option value="J" '+ isSelected("J") + ' >Jalankulkija</option>';
             html +='<option value="Jp" '+ isSelected("Jp") + ' >Jalankulkija (peilissä)</option>';
             
