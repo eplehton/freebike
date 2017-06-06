@@ -1125,11 +1125,68 @@ function playVideo() {
         req.send();
     }
     
-    function readyToPlayCallback() { 
-        /** 
-         * Called when the video has been loaded completely.
-         */
+    
+    function run() {
+            
+    
+        var query = SAGAME.currentQueries[SAGAME.query_id];
         
+        var src = SAGAME.CLIPPATH + query.clip;
+        // this will be used to check that the timeout function does not show queries when changing videos
+        
+        console.log(query);
+        
+        
+        $("#videoplayer").off("playing");              
+        $("#videoplayer").bind('playing', function() {
+            // This is called ONCE after the video has started playing.
+            // Here we set showQueryTimeout to show the queries.
+            
+            // There is a short latency (100-200 ms) before the video really starts 
+            // playing after calling play. Therefore it is better to wait until the first
+            // playing event before setting the timeout. 
+            
+            // If the timeout is already set, just remove the binding and do nothing.
+            // Note that it is not enough to off-bind the event on the first call: The
+            // event may be able to fire again before the binding is removed, which leads to
+            // double queries to be shown.
+            if (SAGAME.showQueryTimeout != 0) { 
+                $("#videoplayer").off("playing");              
+                return; }
+            
+            
+            SAGAME.showQueryTimeout = setTimeout(function() {
+                /* NOT NECESSARY ANYMORE
+                if (src != $("#videoplayer")[0].src) {
+                    console.log(src);
+                    console.log($("#videoplayer")[0].src);
+                    console.log("showQuery not called, because videoplayer has a different source! This should happen when jumping with a and z.");
+                    return;
+                }*/
+                
+                showQuery(query); 
+                
+                $("#videoplayer")[0].pause();
+                PERF_video_pause_called = Date.now();
+                
+                /*console.log("video play: " + PERF_video_play_called 
+                    + " video paused: "+ PERF_video_pause_called 
+                    + " duration: " + (PERF_video_pause_called - PERF_video_play_called)); */
+                var latency = $("#videoplayer")[0].currentTime - query.stop_time;
+                console.log("Stop time: "+ query.stop_time + " Video stopped: "+ $("#videoplayer")[0].currentTime + " latency: "+ latency);
+                }, 
+                query.stop_time * 1000);
+            
+            // save the start
+            var ev = new ExpEvent(query.clip, 'videoPlaying', $("#videoplayer")[0].currentTime);
+            ev.save();
+            });
+    
+        
+        // show the information
+        $("#currentvideo").html( '('+ (SAGAME.query_id+1) +'/'+ SAGAME.currentClipset.length +') ' + query.clip.substring(0, SAGAME.clipIdLength) );
+
+        // start playing
         $("#videoplayer")[0].play();
         
         PERF_video_play_called = Date.now();
@@ -1141,158 +1198,46 @@ function playVideo() {
             showMarkers(); 
         }
         
-        // getting the markers positioned is tricky, because the video size changes	
-        // during the first 0-500 ms before calling play so that markers can in a wrong position
-        //
-        // It is a MUST to reposition the markers after the size has been set.
-        // //$("#videoplayer").off("resize");
-        // //$("#videoplayer").resize( function() { showMarkers(); });
-        
         if (SAGAME.showMarkers) {
+            // getting the markers positioned is tricky, because the video size changes	
+            // during the first 0-500 ms before calling play so that markers can in a wrong position
+            //
+            // It is a MUST to reposition the markers after the size has been set.
+            // //$("#videoplayer").off("resize");
+            // //$("#videoplayer").resize( function() { showMarkers(); });        
             $("#videoMask").fadeOut(500, showMarkers);
         } else {
             $("#videoMask").fadeOut(500);
         }
 
         console.log("Playing " + $("#videoplayer")[0].src);                
-
+        
     }
     
-    function run() {
-        SAGAME.showQueryTimeout = 0; // global! 
-        
-        $("#videoMask").show();
-            
-        
-        if (query_id < SAGAME.currentQueries.length) {
-            var query = SAGAME.currentQueries[query_id];
-            
-            var src = SAGAME.CLIPPATH + query.clip;
-            // this will be used to check that the timeout function does not show queries when changing videos
-            
-            console.log(query);
-            
-            
-            $("#videoplayer").off("playing");              
-            $("#videoplayer").bind('playing', function() {
-                // This is called ONCE after the video has started playing.
-                // Here we set showQueryTimeout to show the queries.
-                
-                // There is a short latency (100-200 ms) before the video really starts 
-                // playing after calling play. Therefore it is better to wait until the first
-                // playing event before setting the timeout. 
-                
-                // If the timeout is already set, just remove the binding and do nothing.
-                // Note that it is not enough to off-bind the event on the first call: The
-                // event may be able to fire again before the binding is removed, which leads to
-                // double queries to be shown.
-                if (SAGAME.showQueryTimeout != 0) { 
-                    $("#videoplayer").off("playing");              
-                    return; }
-                
-                
-                SAGAME.showQueryTimeout = setTimeout(function() {
-                    /* NOT NECESSARY ANYMORE
-                    if (src != $("#videoplayer")[0].src) {
-                        console.log(src);
-                        console.log($("#videoplayer")[0].src);
-                        console.log("showQuery not called, because videoplayer has a different source! This should happen when jumping with a and z.");
-                        return;
-                    }*/
-                    
-                    showQuery(query); 
-                    
-                    $("#videoplayer")[0].pause();
-                    PERF_video_pause_called = Date.now();
-                    
-                    /*console.log("video play: " + PERF_video_play_called 
-                        + " video paused: "+ PERF_video_pause_called 
-                        + " duration: " + (PERF_video_pause_called - PERF_video_play_called)); */
-                    var latency = $("#videoplayer")[0].currentTime - query.stop_time;
-                    console.log("Stop time: "+ query.stop_time + " Video stopped: "+ $("#videoplayer")[0].currentTime + " latency: "+ latency);
-                    }, 
-                    query.stop_time * 1000);
-                
-                // save the start
-                var ev = new ExpEvent(query.clip, 'videoPlaying', $("#videoplayer")[0].currentTime);
-                ev.save();
-                });
-        
-            
-                        
-            
-            
-            $("#currentvideo").html( '('+ (query_id+1) +'/'+ videoset.length +') ' + query.clip.substring(0, SAGAME.clipIdLength) );
-
-            
-            //var playCalled = false;
-            
-
-            preloadVideo($("#videoplayer")[0], src, readyToPlayCallback);
-
-            
-            // can play through is not a good way to start videos: 
-            // at least in Firefox the event may seems to be firing before we are ready to set the event
-            // or something... 
-            
-            
-            //$("#videoplayer")[0].src = src;
-            
-            
-            // set the source and start as soon as it is loaded enough
-            //$("#videoplayer").on("canplaythrough", function() {
-            //    readyToPlayCallback();
-            //});
-       
-            // canplaythrough is probably already called before we set the handler
-            //if ( ($("#videoplayer")[0].readyState > 3) && (! playCalled) ) {
-            //    readyToPlayCallback();
-            //}
-            
-            
-            
-            /* This is an alternative way to time the targets which does not appear to be as precise.
-            $("#videoplayer").off("timeupdate");  
-            $("#videoplayer").bind('timeupdate', function() {
-                if ($("#videoplayer")[0].currentTime > query.stop_time) {
-                    if (src != $("#videoplayer")[0].src) {
-                        console.log(src);
-                        console.log($("#videoplayer")[0].src);
-                        console.log("showQuery not called, because videoplayer has a different source! This should happen when jumping with a and z.");
-                        return;
-                    }
-                    
-                    console.log("will call showQuery 1");
-                    showQuery(query); 
-                    $("#videoplayer")[0].pause();
-                    console.log("Query stop time: "+ query.stop_time + " Video stopped: "+ $("#videoplayer")[0].currentTime);
-                }
-            });
-            */
-            
-
-
-        } 
-    }
-    
-    //query_id += 1;
-    /*if (query_id == 0) {
-        SAGAME.currentQueries = loadQueries(videoset);
-    } 
-    // this function is changed to rely on SAGAME object
-    */ 
 
     
     /*
         This plays a single video in the game.
     */
-    var query_id = SAGAME.query_id;
-    var videoset = SAGAME.currentClipset;
     
 	console.log("startGame called");
     
     prepare();
-    setTimeout(run, 500);    
+    
+    SAGAME.showQueryTimeout = 0; // global! 
+        
+    if (SAGAME.query_id < SAGAME.currentQueries.length) {
+
+        var query = SAGAME.currentQueries[SAGAME.query_id];
+            
+        var src = SAGAME.CLIPPATH + query.clip;
+            // this will be used to check that the timeout function does not show queries when changing videos
+        
+        preloadVideo($("#videoplayer")[0], src, run);
+
+    }
+    
+    // setTimeout(run, 500);    
 }
 
 
