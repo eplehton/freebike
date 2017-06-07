@@ -644,35 +644,35 @@ function downloadDexieTable(tableName) {
 }
 
 
-function sendPlayerData(player_id) {
-
-    function sendToServer(content) {
-        $.ajax({
-            url: '/logisafe/receive_test.php',
-            type: 'post',
-            dataType: 'json',
-            success: function (data) {
-                 console.log(data.responseText);
-            },
-            data: content
-        }).fail( function(e)  {
-            console.log(e);
-        });
-    }
-    
-    db.answers.where("player_id").equals(player_id).toArray().then( function(playerAnswers) {
-
-        db.expevents.where("player_id").equals(player_id).toArray().then( function(playerExpevents ) {
-            
-            var data = { 'player_id': player_id, 
-                         'answers': playerAnswers,
-                         'expevents' : playerExpevents }
-            var dataJSON = JSON.stringify(data); 
-            sendToServer(dataJSON);
-        });
+function logToServer(player_id) {
+    if (SAGAME.LOGURL) {
+        function sendToServer(content) {
+            $.ajax({
+                url: SAGAME.LOGURL,
+                type: 'post',
+                dataType: 'json',
+                success: function (data) {
+                     console.log(data.responseText);
+                },
+                data: content
+            }).fail( function(e)  {
+                console.log(e);
+            });
+        }
         
-    }).catch( function(e) { console.log("Error sending" + e); });
-    
+        db.answers.where("player_id").equals(player_id).toArray().then( function(playerAnswers) {
+
+            db.expevents.where("player_id").equals(player_id).toArray().then( function(playerExpevents ) {
+                
+                var data = { 'player_id': player_id, 
+                             'answers': playerAnswers,
+                             'expevents' : playerExpevents }
+                var dataJSON = JSON.stringify(data); 
+                sendToServer(dataJSON);
+            });
+            
+        }).catch( function(e) { console.log("Error sending" + e); });
+    }
 }
 
 
@@ -1463,7 +1463,7 @@ function setupInteraction() {
                 // 2) show end instruction 
                 // 3) save the points from this 
                
-                sendPlayerData(sessionStorage.getItem("Freebike.SAGame.player_id"));
+                logToServer(sessionStorage.getItem("Freebike.SAGame.player_id"));
                 
                 setScores(SAGAME.currentGameName, { points : SAGAME.currentPoints ,
                                                    maxPoints : SAGAME.currentMaxPoints } );
@@ -1556,7 +1556,7 @@ function setupInteraction() {
 				}
 				break;
             case "1".charCodeAt(0): // replay
-                sendPlayerData(sessionStorage.getItem("Freebike.SAGame.player_id"));
+                logToServer(sessionStorage.getItem("Freebike.SAGame.player_id"));
 
                 
                 //playVideo(SAGAME.query_id, SAGAME.currentClipset);
