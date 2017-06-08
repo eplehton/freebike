@@ -1443,16 +1443,16 @@ function setupInteraction() {
         SAGAME.currentPoints = 0; 
         SAGAME.currentMaxPoints = 0;
         var videoSet = SAGAME.currentClipset; 
-        SAGAME.currentQueries = loadQueries(videoSet);
-        
-        var queriesBeforeCalibration = SAGAME.calibInterval;
-        
-        
         
         if (SAGAME.randomizeOrder == 1)  {
-            shuffleArray(videoSet);
-            // SAGAME.currentClipset = videoSet; // is it necessary to do this? 
+            console.log("randomize order");
+            videoSet = shuffleArray(SAGAME.currentClipset);
+            // = videoSet; // is it necessary to do this? 
         }
+        
+        SAGAME.currentQueries = loadQueries(SAGAME.currentClipset);
+        
+        var queriesBeforeCalibration = SAGAME.calibInterval;
         
         
         
