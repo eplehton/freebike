@@ -287,7 +287,7 @@ function checkAnswersMultipleChoice() {
     }
     
     //$(points)[0].style.width = (1 + 20*pointCounter) + "px";
-    $("#points").html ('<p>Pisteet ' + pointCounter + '</p>');
+    $("#points").html ('' + pointCounter);
 	
     
     $("#videoMask").hide();
@@ -452,7 +452,7 @@ function checkAnswersYesNo() {
     }
     
     //$(points)[0].style.width = (1 + 20*pointCounter) + "px";
-    $("#points").html ('<p>Pisteet ' + pointCounter + '</p>');
+    $("#points").html ('' + pointCounter);
 	
     
     $("#videoMask").hide();
@@ -616,12 +616,13 @@ function checkAnswersSelectOne() {
         SAGAME.currentPoints = 0;
     }
     
-    $("#points").html ('<p>Pisteet ' + SAGAME.currentPoints + '</p>');
+    $("#points").html ('' + SAGAME.currentPoints);
 	
     
     $("#videoMask").hide();
 	$("#checkbutton").hide();
-	$("#nextbutton").show();
+	$("#nextbutton").fadeIn(500);
+    // $("#nextbutton").show();
 	
 	
 }
@@ -1093,6 +1094,9 @@ function playVideo() {
         // this is helper functions which clears old things away and shows mask
         hideMarkers();
         $("#nextbutton").hide();
+        $("#points").show();
+        $("#exitGameButton").show();
+    
         $("#videoMask").show();
         clearQueries();        
     }
@@ -1247,6 +1251,9 @@ function finishVideo() {
 /**
  * This functions cleans up everything if video is stopped abruptly and when it ends normally. 
  */
+    $("#points").hide();
+    $("#exitGameButton").hide();
+    
     $("#videoplayer").hide();
     clearTimeout(SAGAME.showQueryTimeout);
     $("#videoplayer")[0].src = null;
@@ -1400,6 +1407,7 @@ function setupInteraction() {
     */
     
     $("#showPracticeInstructions").click(function() {
+        console.log("showPracticeInstructions");
         $("#home").hide();
         $("#practiceInstructions").show();
         SAGAME.currentGameName = 'Harjoittelu';
@@ -1474,6 +1482,7 @@ function setupInteraction() {
                 
             }
         }
+        
         
         $("#nextbutton").off("click"); 
         $("#nextbutton").click(function() {
