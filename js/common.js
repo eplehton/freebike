@@ -53,3 +53,23 @@ function shuffleArray(array) {
     }
     return array;
 }
+
+
+
+// Server communication funcs
+
+function postJSONtoServer(content, url) {
+    $.ajax({
+        url: SAGAME.LOGURL,
+        type: 'post',
+        dataType: 'json',
+        success: function (data) {
+             console.log(data.responseText);
+        },
+        data: content
+    }).fail( function(e)  {
+        console.log(e);
+    });
+}
+
+

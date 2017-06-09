@@ -29,10 +29,7 @@ function Answer(player_id, src, src_stop_time, query_id, box_id, query_started_r
     /*
 	Answer class represent answers and related information.
     */
-    //this.player_id = player_id; // 2017-06-06 player comes from session
-    this.player_id = sessionStorage.getItem("Freebike.SAGame.player_id");
-    //this.session_id = sessionStorage.getItem("Freebike.SAGame.session_id");
-    
+    this.player_id = player_id;     
     this.src = src;
     this.src_stop_time = src_stop_time;
     this.query_id = query_id;
@@ -320,7 +317,10 @@ function checkAnswersYesNo() {
         var qbox = document.getElementById(query_box_id);
         var status = getQueryBoxStatus(qbox);
         if (status == 'notpresent') {
-            // we register the status of all the notpresents here
+            // we register the status of all the notpresents here so that we get the information
+            // however, the present ones shoud not be registered here because their status is 
+            // registered when the participat hitted the location. this way we can use their last timstamp as
+            // the response time in yes-no -query
             registerPresence(query, query_id, box_id, "notpresent", query_started_realt);
         }
         
@@ -484,13 +484,11 @@ function checkAnswersSelectOne() {
         
         var qbox = document.getElementById(query_box_id);
         var status = getQueryBoxStatus(qbox);
-        if (status == 'notpresent') {
-            // we register the status of all the notpresents here
-            registerPresence(query, query_id, box_id, "notpresent", query_started_realt);
-        }
         
         
-        // console.log(SAGAME.description);
+        // we register the status of all the locations here
+        registerPresence(query, query_id, box_id, status, query_started_realt);
+        
         
         if (status == 'present') {
             //var qbt = qbox.getElementsByClassName("query_box_target").item(0);
@@ -503,41 +501,24 @@ function checkAnswersSelectOne() {
             
             qbox.style.borderColor = "red";
             qbox.style.borderWidth = "3px";
-            //qbox.innerHTML = "<p>-5</p>";
-            
-            
             
             if (SAGAME.feedback == 'description') {
                 pointGain += -1;
 
                 var txt = "Menetit pisteen!<br />" + qitem.description;
-                
                 $("#"+ query_feedback_id).html(txt);
                 $("#"+ query_feedback_id).show(); 
                 
             } else {
-            
-                pointGain += -5;
-
-                var txt = "Voi ei! Jäi huomaamatta!<br /> -5";
-                if (qitem.type == 'occlusion') {
-                    txt = "Voi ei!<br /> Näköeste jäi huomaamatta!<br /> -5";
-                }
-                $("#"+ query_feedback_id).html(txt);
-                $("#"+ query_feedback_id).show(); 
+                console.log("Not implemented without description.");
             }
         }
         
         if ((qitem.type != 'nothing') && (status == 'present')){
-            //var qbt = qbox.getElementsByClassName("query_box_target").item(0);
-            //qbt.style.borderColor = "green";
-            //qbt.style.borderWidth = "3px";
-            //qbt.innerHTML = "<p>+5</p>";
                             
             qbox.style.borderColor = "green";
             qbox.style.borderWidth = "3px";
-            //qbox.innerHTML = "<p>+5</p>";
-
+            
             if (SAGAME.feedback == 'description') {
                 pointGain += 1;
                 
@@ -547,54 +528,30 @@ function checkAnswersSelectOne() {
                 $("#"+ query_feedback_id).show(); 
    
             } else {
-                pointGain += 5;
-                
-                var txt = "Hyvin havaittu! <br /> +1" ;
-                if (qitem.type == 'occlusion') {
-                    txt = "Hyvin havaittu näköeste!<br /> +1";
-                }
-            
-                $("#"+ query_feedback_id).html(txt);
-                $("#"+ query_feedback_id).show(); 
-   
+                 console.log("Not implemented without description.");
             }
         }
         
         if ((qitem.type == 'nothing') && (status == 'notpresent')){
-            //var qbt = qbox.getElementsByClassName("query_box_target").item(0);
-            //qbt.style.borderColor = "gray";
-            //qbt.style.borderWidth = "3px";
-            //qbt.innerHTML = "<p>+1</p>";
             
             qbox.style.borderColor = "gray";
             qbox.style.borderWidth = "3px";
             //qbox.innerHTML = "<p>+1</p>";
             
             if (SAGAME.feedback == 'description') {
-                //var txt = "+1" ;
-                
-                //$("#"+query_feedback_id).html(txt);
-                //$("#"+query_feedback_id).show();
-                
+                // do not display any feedback
             } else {
-            
-                pointGain += 0;
-                
-                $("#"+query_feedback_id).html("Hyvä!<br/> Ei ollut mitään etkä valinnut sitä.<br />+1");
-                $("#"+query_feedback_id).show();     
+                console.log("Not implemented without description.");
             }
         } 
         
         if ((qitem.type == 'nothing') && (status == 'present')){
-            // var qbt = qbox.getElementsByClassName("query_box_target").item(0);
             
             if (SAGAME.feedback == 'description') {
                 $("#"+query_feedback_id).html("Hyvä yritys!")
                 $("#"+query_feedback_id).show();
             } else {
-                
-                $("#"+query_feedback_id).html("Tyhjä!<br/> Jos jätät valitsematta sellaiset missä ei ole mitään niin saat yhden pisteen.")
-                $("#"+query_feedback_id).show();
+                console.log("Not implemented without description.");
             }
         }             
         
@@ -622,7 +579,6 @@ function checkAnswersSelectOne() {
     $("#videoMask").hide();
 	$("#checkbutton").hide();
 	$("#nextbutton").fadeIn(500);
-    // $("#nextbutton").show();
 	
 	
 }
@@ -645,21 +601,15 @@ function downloadDexieTable(tableName) {
 }
 
 
+// Server communication functions 
+
 function logToServer(player_id) {
+    /**
+     * This function will json the database contents and send them to the 
+       SAGAME.LOGURL via AJAX post call if the url is defined. It does not 
+       care what happens after that. 
+     */    
     if (SAGAME.LOGURL) {
-        function sendToServer(content) {
-            $.ajax({
-                url: SAGAME.LOGURL,
-                type: 'post',
-                dataType: 'json',
-                success: function (data) {
-                     console.log(data.responseText);
-                },
-                data: content
-            }).fail( function(e)  {
-                console.log(e);
-            });
-        }
         
         db.answers.where("player_id").equals(player_id).toArray().then( function(playerAnswers) {
 
@@ -669,7 +619,7 @@ function logToServer(player_id) {
                              'answers': playerAnswers,
                              'expevents' : playerExpevents }
                 var dataJSON = JSON.stringify(data); 
-                sendToServer(dataJSON);
+                postJSONtoServer(dataJSON, SAGAME.LOGURL);
             });
             
         }).catch( function(e) { console.log("Error sending" + e); });
@@ -701,7 +651,7 @@ function loadClipsetsFrom(json_file) {
         SAGAME.CLIPPATH = data.CLIPPATH;
     }).fail(function(err) {
         console.log(err);
-        console.log("Loading clipsets with AJAX failed. Fallback to offline version.");
+        console.log("Loading clipsets with AJAX failed. Fallback to offline version. Will fail if they are not defined.");
         SAGAME.CLIPSETS = OFFLINE_CLIPSETS;
         SAGAME.CLIPPATH = OFFLINE_CLIPPATH;
     });
@@ -810,37 +760,8 @@ function registerPresence(query, query_id, box_id, answer, query_started_realt) 
 	var player_id = sessionStorage.getItem("Freebike.SAGame.player_id");
 	var answer_latency = (Date.now() - query_started_realt) / 1000;
 	
-/* 	var answer = { player_id : player_id,
-				   src : query.clip,
-		           src_stop_time : query.stop_time,
-				   query_id : query_id,
-				   box_id : box_id,
-				   query_started_realt : query_started_realt,
-				   answer_latency : answer_latency,
-				   answer : answer,
-				   target_id :  query_items[box_id].target_id,
-		           target_typetype : query_items[box_id].type,
-				   target_x : query_items[box_id].x,
-		           target_y : query_items[box_id].y};
-				   
-	test_answers.push(answer); */
-    
-/*     var ansObj = new Answer(player_id, 
- *                             query.clip, 
- *                             query.stop_time, 
- *                             query_id,
- *                             box_id, 
- *                             query_started_realt, 
- *                             answer_latency, 
- *                             answer, 
- *                             query_items[box_id].target_id, 
- *                             query_items[box_id].type, 
- *                             query_items[box_id].x, 
- *                             query_items[box_id].y);
- *                             
- */
- 
-    var ansObj = new Answer(query.clip,    // 2017-06-06 player_id comes from session
+    var ansObj = new Answer(sessionStorage.getItem("Freebike.SAGame.player_id"),
+                            query.clip,
                             query.stop_time, 
                             query_id,
                             box_id, 
@@ -1094,13 +1015,16 @@ function playVideo() {
         // this is helper functions which clears old things away and shows mask
         hideMarkers();
         $("#nextbutton").hide();
-        $("#points").show();
-        $("#exitGameButton").show();
-    
-        $("#videoMask").show();
-        clearQueries();        
-    }
+        
+        // for some reason IE11 does not show them with jqeury show()
+        $("#points")[0].style.display = 'block'; 
+        $("#exitGameButton")[0].style.display = 'block'; 
+        
+        
+        showVideoMask(); // this does not only show it but positions it
+        clearQueries(); 
 
+    }
     
     function preloadVideo(videoElement, src, callWhenReady) {
         // used to force load the video before starting
@@ -1213,7 +1137,8 @@ function playVideo() {
         } else {
             $("#videoMask").fadeOut(500);
         }
-
+        $("#videoLoadingMsg").hide();
+        
         console.log("Playing " + $("#videoplayer")[0].src);                
         
     }
@@ -1251,8 +1176,12 @@ function finishVideo() {
 /**
  * This functions cleans up everything if video is stopped abruptly and when it ends normally. 
  */
-    $("#points").hide();
-    $("#exitGameButton").hide();
+    // $("#points").hide();
+    // $("#exitGameButton").hide();
+    
+    // IE11 does not work with Jquery show/hide for some reason
+    $("#points")[0].style.display = 'none'; 
+    $("#exitGameButton")[0].style.display = 'none'; 
     
     $("#videoplayer").hide();
     clearTimeout(SAGAME.showQueryTimeout);
@@ -1343,6 +1272,7 @@ function setupInteraction() {
                 
             // hack, this should not be here!!!! just to make trukki game to work
             showScores('Harjoittelu');
+            showScores('PilottiB');
             showScores('AB');
             showScores('C');
             showScores('D1');
@@ -1359,12 +1289,7 @@ function setupInteraction() {
         }
     });
         
-    $("#showPracticeInstructions").click(function() {
-        $("#home").hide();
-        $("#practiceInstructions").show();
-        
-    });
-
+    
     /*
     $("#startPractice").click(function() {  // consider modifying this so that practise is just one game set?
         $("#practiceInstructions").hide();
@@ -1405,7 +1330,7 @@ function setupInteraction() {
         
     })
     */
-    
+
     $("#showPracticeInstructions").click(function() {
         console.log("showPracticeInstructions");
         $("#home").hide();
