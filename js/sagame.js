@@ -207,6 +207,7 @@ function checkAnswers() {
     } else { // yesno
         checkAnswersYesNo();
     }
+    
 }
 
 function checkAnswersMultipleChoice() {
@@ -573,8 +574,8 @@ function checkAnswersSelectOne() {
         SAGAME.currentPoints = 0;
     }
     
-    $("#points").html ('' + SAGAME.currentPoints);
-	
+    updatePoints();
+
     
     $("#videoMask").hide();
 	$("#checkbutton").hide();
@@ -582,6 +583,7 @@ function checkAnswersSelectOne() {
 	
 	
 }
+
 
 
 
@@ -1012,16 +1014,21 @@ function playVideo() {
 
     
     function prepare() {
+        
         // this is helper functions which clears old things away and shows mask
         hideMarkers();
         $("#nextbutton").hide();
+        $("#videoplayer").hide();
+        
         
         // for some reason IE11 does not show them with jqeury show()
         $("#points")[0].style.display = 'block'; 
         $("#exitGameButton")[0].style.display = 'block'; 
         
         
-        showVideoMask(); // this does not only show it but positions it
+        
+        // showVideoMask(); // this does not only show it but positions it
+        
         clearQueries(); 
 
     }
@@ -1042,20 +1049,26 @@ function playVideo() {
               // Video is now downloaded
               // and we can set it as source on the video element
               videoElement.src = vid;
-            
+              showVideoMask();
+               
+              $("#videoLoadingMsg").hide();
               callWhenReady();
            }
         }
         req.onerror = function() {
            // Error
+            $("#videoLoadingMsg").html("Loading video failed! Please reload the page.");
            console.log("Video loading failed");
         }
         req.send();
+        
+        $("#videoLoadingMsg").show();
+       
     }
     
     
     function run() {
-            
+        
     
         var query = SAGAME.currentQueries[SAGAME.query_id];
         
@@ -1118,8 +1131,10 @@ function playVideo() {
         $("#videoplayer")[0].play();
         
         PERF_video_play_called = Date.now();
-        $("#videoplayer").show();
-        
+        // $("#videoplayer").show();
+        $("#videoplayer").fadeIn(500);
+        $("#videoMask").hide()
+            
         if (SAGAME.showMarkers) {
             // show the markers now, so that we get the surface enter to the camera approx. when the video starts playing
             // this is important so that it can be used to sync the scene camera
@@ -1133,11 +1148,9 @@ function playVideo() {
             // It is a MUST to reposition the markers after the size has been set.
             // //$("#videoplayer").off("resize");
             // //$("#videoplayer").resize( function() { showMarkers(); });        
-            $("#videoMask").fadeOut(500, showMarkers);
-        } else {
-            $("#videoMask").fadeOut(500);
-        }
-        $("#videoLoadingMsg").hide();
+            setTimeout(500, showMarkers);
+        } 
+
         
         console.log("Playing " + $("#videoplayer")[0].src);                
         
@@ -1162,11 +1175,11 @@ function playVideo() {
         var src = SAGAME.CLIPPATH + query.clip;
             // this will be used to check that the timeout function does not show queries when changing videos
         
-        preloadVideo($("#videoplayer")[0], src, run);
+        preloadVideo($("#videoplayer")[0], src, run );
 
     }
     
-    // setTimeout(run, 500);    
+        
 }
 
 
@@ -1271,7 +1284,7 @@ function setupInteraction() {
             
                 
             // hack, this should not be here!!!! just to make trukki game to work
-            showScores('Harjoittelu');
+            showScores('practice');
             showScores('PilottiB');
             showScores('AB');
             showScores('C');
@@ -1335,7 +1348,6 @@ function setupInteraction() {
         console.log("showPracticeInstructions");
         $("#home").hide();
         $("#practiceInstructions").show();
-        SAGAME.currentGameName = 'Harjoittelu';
         SAGAME.currentClipset = SAGAME.CLIPSETS.practice; // default behaviour
     });
     
@@ -1343,7 +1355,6 @@ function setupInteraction() {
     $("#showGameInstructions").click(function() {
         $("#home").hide();
         $("#gameInstructions").show();
-        SAGAME.currentGameName = 'Peli';
         SAGAME.currentClipset = SAGAME.CLIPSETS.game; // default behaviour
     });
 
@@ -1362,11 +1373,11 @@ function setupInteraction() {
         /**
             UI function to play a game over the clipset specified in SAGAME global object
         */
-        
-
-
+    
         SAGAME.currentPoints = 0; 
         SAGAME.currentMaxPoints = 0;
+        updatePoints();
+        
         var videoSet = SAGAME.currentClipset; 
         
         if (SAGAME.randomizeOrder == 1)  {
@@ -1540,4 +1551,9 @@ function showScores(gameName) {
         txt = scores.points + "/" + scores.maxPoints;
     }
     $("#scores_"+ gameName).html(txt);
+}
+
+
+function updatePoints() {
+    $("#points").html ('' + SAGAME.currentPoints);
 }
