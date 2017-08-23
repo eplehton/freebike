@@ -170,6 +170,7 @@ VideoBuffer.prototype.getVideo(id) {
 var SAGAME = {};
 // defaults, can be overriden in the html
 SAGAME.sagameStyle = 'yesno';
+SAGAME.fastResponseLimit = 999;
 SAGAME.showMarkers = 1;
 SAGAME.calibInterval = 16;
 SAGAME.clipIdLength = 3; // hom many characters from the beginning will be shown as clip id
@@ -546,6 +547,7 @@ function checkAnswersSelectOne() {
     
     var had_miss = false;
     var pointGain = 0;
+    var answerObj = null;
 
     
     for (var box_id=0; box_id<query.items.length; box_id++) {
@@ -558,8 +560,8 @@ function checkAnswersSelectOne() {
         
         
         // we register the status of all the locations here
-        registerPresence(query, query_id, box_id, status, query_started_realt);
-        
+        answerObj = registerPresence(query, query_id, box_id, status, query_started_realt);
+        console.log("answer_latency" + answerObj.answer_latency);
         
         if (status == 'present') {
             //var qbt = qbox.getElementsByClassName("query_box_target").item(0);
@@ -574,7 +576,11 @@ function checkAnswersSelectOne() {
             qbox.style.borderWidth = "3px";
             
             if (SAGAME.feedback == 'description') {
-                pointGain += -1;
+                if (answerObj.answer_latency < SAGAME.fastResponseLimit) {
+                    pointGain += -2;
+                } else {
+                    pointGain += -1;
+                }
 
                 var txt = "Menetit pisteen!<br />" + qitem.description;
                 $("#"+ query_feedback_id).html(txt);
@@ -591,8 +597,12 @@ function checkAnswersSelectOne() {
             qbox.style.borderWidth = "3px";
             
             if (SAGAME.feedback == 'description') {
-                pointGain += 1;
-                
+                if (answerObj.answer_latency < SAGAME.fastResponseLimit) {
+                    pointGain += 2;
+                } else {
+                    pointGain += 1;
+                }
+ 
                 var txt = "Hyvin havaittu! Sait pisteen. <br />"+ qitem.description;
          
                 $("#"+ query_feedback_id).html(txt);
@@ -636,7 +646,10 @@ function checkAnswersSelectOne() {
     }
     
     // setup the points
-    SAGAME.currentMaxPoints += 1; // This is simple, for each video you can get one point in select-one kind of game
+
+    //SAGAME.currentMaxPoints += 1; // This is simple, for each video you can get one point in select-one kind of game
+    
+    SAGAME.currentMaxPoints += 2; // This is simple, for each video you can get two or one points 
     
     console.log(pointGain);
     SAGAME.currentPoints += pointGain;
@@ -644,7 +657,7 @@ function checkAnswersSelectOne() {
         SAGAME.currentPoints = 0;
     }
     
-    updatePoints();
+    updatePoints(pointGain);
 
     
     $("#videoMask").hide();
@@ -884,6 +897,7 @@ function registerPresence(query, query_id, box_id, answer, query_started_realt) 
                             query_items[box_id].y);
                             
     ansObj.save();
+    return ansObj;
 }
 
 
@@ -1549,7 +1563,7 @@ function setupInteraction() {
     
         SAGAME.currentPoints = 0; 
         SAGAME.currentMaxPoints = 0;
-        updatePoints();
+        updatePoints(0);
         
         var videoSet = SAGAME.currentClipset; 
         
@@ -1732,6 +1746,24 @@ function showScores(gameName) {
 }
 
 
-function updatePoints() {
-    $("#points").html ('' + SAGAME.currentPoints);
+function updatePoints(pointGain) {
+    
+    if (pointGain != 0) {
+        
+        if (pointGain > 0) {
+            $("#points").html('+' + pointGain); 
+            $("#points").effect( {effect : "scale", percent : 120 } ).effect( {effect : "scale", percent : 74 } );
+        } else {
+            $("#points").html('' + pointGain); 
+            $("#points").effect( "shake" );
+        }
+        
+
+        
+        setTimeout(function() { $("#points").html('' + SAGAME.currentPoints); }, 2000);
+    
+    } else {
+        $("#points").html('' + SAGAME.currentPoints); 
+    }
+
 }
