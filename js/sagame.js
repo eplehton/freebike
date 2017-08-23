@@ -93,6 +93,75 @@ db.expevents.mapToClass(ExpEvent);
 db.open();
 
 
+function VideoBuffer() {
+    this.videoURLs = new Map();
+}
+
+VideoBuffer.prototype.waitVideo = function(src, callback) {
+    
+    this.buffer(src); // can do this because multiple requests has been blocked
+    
+    if (this.videoURLs.has(src) && this.videoURLs.get(src) != 'loading') {
+        var url = this.videoURLs.get(src);
+        callback(url);
+        this.videoURLs.delete(src);
+    } else {
+        var self = this;
+        setTimeout(function() { self.waitVideo(src, callback); }, 1000);
+        console.log("Waiting video "+ src + " for next 1 s...")
+    }    
+}
+
+VideoBuffer.prototype.buffer = function(src) {
+    var self = this;
+    
+    var req = new XMLHttpRequest();
+    req.open('GET', src, true);
+    req.responseType = 'blob';
+
+    req.onload = function() {
+       // Onload is triggered even on 404
+       // so we need to check the status code
+       if (this.status === 200) {
+          var videoBlob = this.response;
+          var videoURL = URL.createObjectURL(videoBlob); // IE10+
+          // Video is now downloaded
+          self.videoURLs.set(src, videoURL);
+       }
+    }
+    req.onerror = function() {
+       console.log("Videobuffer: loading failed");
+    }
+    
+    // load if it is not already here
+    if (! this.videoURLs.has(src)) {
+        this.videoURLs.set(src, 'loading'); // prevent sending multiple requests
+        req.send(); 
+    }
+}
+
+/*
+VideoBuffer.prototype.getVideo(id) {
+
+    var promise = new Promise(function(resolve, reject) {
+        // do a thing, possibly async, then…
+        /* if (video available) {
+            resolve
+            } else { 
+                preload
+            }
+        
+      if (/* everything turned out fine ) {
+        resolve("Stuff worked!");
+      }
+      else {
+        reject(Error("It broke"));
+      }
+    });
+
+}
+*/
+
 
 /*
     Global variables for the game
@@ -111,6 +180,7 @@ SAGAME.TARGETS = null;
 SAGAME.query_id = -1; // to hold the current position in the query data
 
 SAGAME.currentClipset = null;
+SAGAME.videoBuffer = new VideoBuffer();
 SAGAME.currentGameName = '';
 SAGAME.currentPoints = 0;
 SAGAME.currentMaxPoints = 0;
@@ -628,12 +698,50 @@ function logToServer(player_id) {
     }
 }
 
+function getScoresFromServer(player_id) {
+    
+    var json_file = 'scoresdata/scores_'+ player_id +'.json';
+    
+    var req = $.getJSON(json_file, function(scoresJSON) {
+        //console.log(scoresStr);
+        console.log(scoresJSON);
+        //var scoresJSON = JSON.parse(scoresStr);
+        sessionStorage.setItem("Freebike.SAGame.scores", JSON.stringify(scoresJSON));    
+    
+    }).fail(function(err) {
+        console.log(err);
+        console.log("Loading scores with AJAX failed.");
+        
+        scoresTmpl = {'player_id' : player_id}
+        sessionStorage.setItem("Freebike.SAGame.scores", JSON.stringify(scoresTmpl) ); // for storing the scores
+        
+    });
+    return req;
+}
+
+
+function saveScoresToServer(scoresJSON) {
+    /**
+     * This function take the scores json and send it to the server for storage. 
+     */
+    console.log(SAGAME.SAVESCORESURL)
+
+    console.log(scoresJSON)
+    
+    
+    if (SAGAME.SAVESCORESURL) {
+        postJSONtoServer(scoresJSON, SAGAME.SAVESCORESURL);
+    }
+}
+
 
 
 
 function getScores(gameName) {
     var scoresStr = sessionStorage.getItem("Freebike.SAGame.scores");
+    console.log(scoresStr);
     var scores = JSON.parse(scoresStr);
+    
     if (scores.hasOwnProperty(gameName)) {
         return scores[gameName];
     } else {
@@ -949,6 +1057,12 @@ function showQuery(query) {
             function makeCallbackTB(qi, q_id, b_id) {
                 return function() { var status = toggleQueryBox(q_id, b_id); 
                                     // the first hit is the answer, so we proceed immediately to the checkAnswers
+                                    
+                                    // we record this for completeness: it will be easier to calculate "pondering time"
+                                    var query = SAGAME.currentQueries[SAGAME.query_id];
+                                    var ev = new ExpEvent(query.clip, 'answerGiven', -1); 
+                                    ev.save();
+                                
                                     checkAnswers();
                     
                                 }
@@ -1025,8 +1139,6 @@ function playVideo() {
         $("#points")[0].style.display = 'block'; 
         $("#exitGameButton")[0].style.display = 'block'; 
         
-        
-        
         // showVideoMask(); // this does not only show it but positions it
         
         clearQueries(); 
@@ -1067,6 +1179,8 @@ function playVideo() {
     }
     
     
+    
+    
     function run() {
         
     
@@ -1097,26 +1211,25 @@ function playVideo() {
             
             
             SAGAME.showQueryTimeout = setTimeout(function() {
-                /* NOT NECESSARY ANYMORE
-                if (src != $("#videoplayer")[0].src) {
-                    console.log(src);
-                    console.log($("#videoplayer")[0].src);
-                    console.log("showQuery not called, because videoplayer has a different source! This should happen when jumping with a and z.");
-                    return;
-                }*/
-                
+                // this is the main thing
                 showQuery(query); 
-                
                 $("#videoplayer")[0].pause();
+
+                // calc latency for diagnostics
                 PERF_video_pause_called = Date.now();
-                
-                /*console.log("video play: " + PERF_video_play_called 
-                    + " video paused: "+ PERF_video_pause_called 
-                    + " duration: " + (PERF_video_pause_called - PERF_video_play_called)); */
                 var latency = $("#videoplayer")[0].currentTime - query.stop_time;
                 console.log("Stop time: "+ query.stop_time + " Video stopped: "+ $("#videoplayer")[0].currentTime + " latency: "+ latency);
-                }, 
-                query.stop_time * 1000);
+                
+                
+                // preload the next video: this can be left out without worries
+                // calling it here ensures that it will not be done for two videos at the same time during the first clip
+                if (SAGAME.query_id + 1 < SAGAME.currentQueries.length) {
+                    var nextQuery = SAGAME.currentQueries[SAGAME.query_id + 1];
+                    var src = SAGAME.CLIPPATH + nextQuery.clip;
+                    SAGAME.videoBuffer.buffer(src);
+                }
+                
+                }, query.stop_time * 1000);
             
             // save the start
             var ev = new ExpEvent(query.clip, 'videoPlaying', $("#videoplayer")[0].currentTime);
@@ -1175,11 +1288,32 @@ function playVideo() {
         var src = SAGAME.CLIPPATH + query.clip;
             // this will be used to check that the timeout function does not show queries when changing videos
         
-        preloadVideo($("#videoplayer")[0], src, run );
+        // preloadVideo($("#videoplayer")[0], src, run );
 
+        $("#videoLoadingMsg").show();
+        
+
+        SAGAME.videoBuffer.waitVideo(src, function(src) { 
+            $("#videoplayer")[0].src = src;
+            showVideoMask();
+            $("#videoLoadingMsg").hide();
+            run();
+
+            
+            /* // calling it here ensures that it will not be done for two videos at the same time during the first clip
+            // preload the next video: can be left out 
+            if (SAGAME.query_id + 1 < SAGAME.currentQueries.length) {
+                var nextQuery = SAGAME.currentQueries[SAGAME.query_id + 1];
+                var src = SAGAME.CLIPPATH + nextQuery.clip;
+                SAGAME.videoBuffer.buffer(src);
+            }
+            */
+            
+        });
+            
     }
     
-        
+
 }
 
 
@@ -1200,6 +1334,18 @@ function finishVideo() {
     clearTimeout(SAGAME.showQueryTimeout);
     $("#videoplayer")[0].src = null;
     
+}
+
+function finishGame() {
+    /**
+     * Function which can get called when a game ends or the player press exit. 
+     */
+    logToServer(sessionStorage.getItem("Freebike.SAGame.player_id"));
+               
+    setScores(SAGAME.currentGameName, { points : SAGAME.currentPoints ,
+                 maxPoints : SAGAME.currentMaxPoints } );
+                
+    showScores(SAGAME.currentGameName);
 }
 
 function toggleQueryBox(query_id, box_id) {
@@ -1270,32 +1416,57 @@ function setupInteraction() {
     $("#exitGameButton").click(function() {
         // consider making exitVideo function
         finishVideo(); 
+        finishGame();
         $("#home").show();
     });
 
+    
+    function login(playerID) {
+        if (SAGAME.checkPlayerID) {
+            console.log(playerID);
+            console.log(SAGAME.validPlayerIDs);
+            var x = $.inArray(playerID, SAGAME.validPlayerIDs);
+            if (x == -1) {
+                return false;
+            }
+        }
+        
+        sessionStorage.setItem("Freebike.SAGame.player_id", playerID); // who is playing 
+        sessionStorage.setItem("Freebike.SAGame.session_id", Date.now()); // unique session
+            
+        getScoresFromServer(playerID);
+        return true;
+    }
+        
     
     // hack, this works for sagame2016
     $("#loginButton").click(function() { 
         var playerId = $("#playerId").val();
         if (playerId != "") {
-            sessionStorage.setItem("Freebike.SAGame.player_id", playerId); // who is playing 
-            sessionStorage.setItem("Freebike.SAGame.session_id", Date.now()); // unique session
-            sessionStorage.setItem("Freebike.SAGame.scores", JSON.stringify({}) ); // for storing the scores
-            
+    
+            if (login(playerId)) {
+                console.log("hei");
+                //scoresTmpl = {'player_id' : playerId}
                 
-            // hack, this should not be here!!!! just to make trukki game to work
-            showScores('practice');
-            showScores('PilottiB');
-            showScores('AB');
-            showScores('C');
-            showScores('D1');
-            showScores('D2');
-            showScores('F');
+                // sessionStorage.setItem("Freebike.SAGame.scores", JSON.stringify(scoresTmpl) ); // for storing the scores
                 
+                    
+                // hack, this should not be here!!!! just to make trukki game to work
+                showScores('practice');
+                showScores('PilottiB');
+                showScores('AB');
+                showScores('C');
+                showScores('D1');
+                showScores('D2');
+                showScores('F');
+                    
+                    
                 
-            
-            $("#login").hide();
-            $("#home").show();
+                $("#login").hide();
+                $("#home").show();
+            } else {
+                alert("Antamasi pelaajatunnus ei ole käytössä. Tarkista pelaajatunnus ja koeta uudestaan.");
+            }
             
         } else {
             alert("Please give player id!");
@@ -1348,6 +1519,7 @@ function setupInteraction() {
         console.log("showPracticeInstructions");
         $("#home").hide();
         $("#practiceInstructions").show();
+        SAGAME.currentGameName = 'Practice';
         SAGAME.currentClipset = SAGAME.CLIPSETS.practice; // default behaviour
     });
     
@@ -1355,6 +1527,7 @@ function setupInteraction() {
     $("#showGameInstructions").click(function() {
         $("#home").hide();
         $("#gameInstructions").show();
+        SAGAME.currentGameName = 'Game';
         SAGAME.currentClipset = SAGAME.CLIPSETS.game; // default behaviour
     });
 
@@ -1371,7 +1544,7 @@ function setupInteraction() {
         
     function startGame() {
         /**
-            UI function to play a game over the clipset specified in SAGAME global object
+            Function to play a game over the clipset specified in SAGAME global object
         */
     
         SAGAME.currentPoints = 0; 
@@ -1406,13 +1579,16 @@ function setupInteraction() {
                 // 1) log the data
                 // 2) show end instruction 
                 // 3) save the points from this 
-               
+                finishGame();
+                
+                /*
                 logToServer(sessionStorage.getItem("Freebike.SAGame.player_id"));
                 
                 setScores(SAGAME.currentGameName, { points : SAGAME.currentPoints ,
                                                    maxPoints : SAGAME.currentMaxPoints } );
                 
                 showScores(SAGAME.currentGameName);
+                */
                 
                 $("#endInstructions").show();                                   
                 
@@ -1500,7 +1676,7 @@ function setupInteraction() {
 					mask.style.display = 'block';
 				}
 				break;
-            case "1".charCodeAt(0): // replay
+            case "1".charCodeAt(0):
                 logToServer(sessionStorage.getItem("Freebike.SAGame.player_id"));
 
                 
@@ -1533,8 +1709,10 @@ function setScores(gameName, scores) {
     
     allScores[gameName] = scores;
     
-    sessionStorage.setItem("Freebike.SAGame.scores", JSON.stringify(allScores));
+    var scoresJSON = JSON.stringify(allScores);
+    sessionStorage.setItem("Freebike.SAGame.scores", scoresJSON);    
     
+    saveScoresToServer(scoresJSON);
 }
 
 

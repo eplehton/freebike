@@ -60,7 +60,7 @@ function shuffleArray(array) {
 
 function postJSONtoServer(content, url) {
     $.ajax({
-        url: SAGAME.LOGURL,
+        url: url,
         type: 'post',
         dataType: 'json',
         success: function (data) {
