@@ -185,6 +185,7 @@ SAGAME.videoBuffer = new VideoBuffer();
 SAGAME.currentGameName = '';
 SAGAME.currentPoints = 0;
 SAGAME.currentMaxPoints = 0;
+SAGAME.currentGameCompleted = 0;
 SAGAME.currentQueries = null; // to hold query data
 SAGAME.showQueryTimeout = null; // global timeout to for query firing 
     
@@ -712,21 +713,24 @@ function logToServer(player_id) {
 }
 
 function getScoresFromServer(player_id) {
+    console.log("player_id: "+ player_id);
     
     var json_file = 'scoresdata/scores_'+ player_id +'.json';
+    console.log(json_file);
     
+    $.ajaxSetup({ cache: false }); // this is important!
     var req = $.getJSON(json_file, function(scoresJSON) {
-        //console.log(scoresStr);
+        console.log("We got scores");
+        
         console.log(scoresJSON);
-        //var scoresJSON = JSON.parse(scoresStr);
-        sessionStorage.setItem("Freebike.SAGame.scores", JSON.stringify(scoresJSON));    
+        localStorage.setItem("Freebike.SAGame.scores", JSON.stringify(scoresJSON));    
     
     }).fail(function(err) {
         console.log(err);
         console.log("Loading scores with AJAX failed.");
         
         scoresTmpl = {'player_id' : player_id}
-        sessionStorage.setItem("Freebike.SAGame.scores", JSON.stringify(scoresTmpl) ); // for storing the scores
+        localStorage.setItem("Freebike.SAGame.scores", JSON.stringify(scoresTmpl) ); // for storing the scores
         
     });
     return req;
@@ -751,7 +755,7 @@ function saveScoresToServer(scoresJSON) {
 
 
 function getScores(gameName) {
-    var scoresStr = sessionStorage.getItem("Freebike.SAGame.scores");
+    var scoresStr = localStorage.getItem("Freebike.SAGame.scores");
     console.log(scoresStr);
     var scores = JSON.parse(scoresStr);
     
@@ -1083,6 +1087,12 @@ function showQuery(query) {
                             }
                         
             qbox.addEventListener("click", makeCallbackTB(locationData, query_id, box_id), false);
+            
+            /* // to visualize fast response limit
+            var query_box_id = "query_box_" + query_id + '_' + box_id;
+            $(query_box_id).hide();                           
+            $(query_box_id).fadeIn(SAGAME.fastResponseLimit);
+            */
 
                         
         } else { // yesno
@@ -1354,12 +1364,15 @@ function finishGame() {
     /**
      * Function which can get called when a game ends or the player press exit. 
      */
+    finishVideo();
+    
     logToServer(sessionStorage.getItem("Freebike.SAGame.player_id"));
-               
+
     setScores(SAGAME.currentGameName, { points : SAGAME.currentPoints ,
-                 maxPoints : SAGAME.currentMaxPoints } );
+                                        maxPoints : SAGAME.currentMaxPoints,
+                                        completed : SAGAME.currentGameCompleted } );
                 
-    showScores(SAGAME.currentGameName);
+    // showScores(SAGAME.currentGameName);
 }
 
 function toggleQueryBox(query_id, box_id) {
@@ -1429,7 +1442,6 @@ function setupInteraction() {
 
     $("#exitGameButton").click(function() {
         // consider making exitVideo function
-        finishVideo(); 
         finishGame();
         $("#home").show();
     });
@@ -1448,7 +1460,7 @@ function setupInteraction() {
         sessionStorage.setItem("Freebike.SAGame.player_id", playerID); // who is playing 
         sessionStorage.setItem("Freebike.SAGame.session_id", Date.now()); // unique session
             
-        getScoresFromServer(playerID);
+
         return true;
     }
         
@@ -1462,19 +1474,7 @@ function setupInteraction() {
                 console.log("hei");
                 //scoresTmpl = {'player_id' : playerId}
                 
-                // sessionStorage.setItem("Freebike.SAGame.scores", JSON.stringify(scoresTmpl) ); // for storing the scores
-                
-                    
-                // hack, this should not be here!!!! just to make trukki game to work
-                showScores('practice');
-                showScores('PilottiB');
-                showScores('AB');
-                showScores('C');
-                showScores('D1');
-                showScores('D2');
-                showScores('F');
-                    
-                    
+               
                 
                 $("#login").hide();
                 $("#home").show();
@@ -1560,12 +1560,16 @@ function setupInteraction() {
         /**
             Function to play a game over the clipset specified in SAGAME global object
         */
-    
-        SAGAME.currentPoints = 0; 
+        var videoSet = SAGAME.currentClipset; 
+
+        
         SAGAME.currentMaxPoints = 0;
+        
+        SAGAME.currentPoints = 0;         
         updatePoints(0);
         
-        var videoSet = SAGAME.currentClipset; 
+        
+
         
         if (SAGAME.randomizeOrder == 1)  {
             console.log("randomize order");
@@ -1593,16 +1597,9 @@ function setupInteraction() {
                 // 1) log the data
                 // 2) show end instruction 
                 // 3) save the points from this 
+                
+                SAGAME.currentGameCompleted = 1;
                 finishGame();
-                
-                /*
-                logToServer(sessionStorage.getItem("Freebike.SAGame.player_id"));
-                
-                setScores(SAGAME.currentGameName, { points : SAGAME.currentPoints ,
-                                                   maxPoints : SAGAME.currentMaxPoints } );
-                
-                showScores(SAGAME.currentGameName);
-                */
                 
                 $("#endInstructions").show();                                   
                 
@@ -1718,13 +1715,13 @@ function setupInteraction() {
 
 
 function setScores(gameName, scores) { 
-    var allScoresStr = sessionStorage.getItem("Freebike.SAGame.scores");
+    var allScoresStr = localStorage.getItem("Freebike.SAGame.scores");
     var allScores = JSON.parse(allScoresStr);
     
     allScores[gameName] = scores;
     
     var scoresJSON = JSON.stringify(allScores);
-    sessionStorage.setItem("Freebike.SAGame.scores", scoresJSON);    
+    localStorage.setItem("Freebike.SAGame.scores", scoresJSON);    
     
     saveScoresToServer(scoresJSON);
 }
@@ -1752,7 +1749,7 @@ function updatePoints(pointGain) {
         
         if (pointGain > 0) {
             $("#points").html('+' + pointGain); 
-            $("#points").effect( {effect : "scale", percent : 120 } ).effect( {effect : "scale", percent : 74 } );
+            $("#points").effect( {effect : "scale", percent : 125 } ).effect( {effect : "scale", percent : 80 } );
         } else {
             $("#points").html('' + pointGain); 
             $("#points").effect( "shake" );
