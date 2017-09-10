@@ -1368,10 +1368,11 @@ function finishGame() {
     
     logToServer(sessionStorage.getItem("Freebike.SAGame.player_id"));
 
-    setScores(SAGAME.currentGameName, { points : SAGAME.currentPoints ,
-                                        maxPoints : SAGAME.currentMaxPoints,
-                                        completed : SAGAME.currentGameCompleted } );
-                
+    if (SAGAME.currentGameCompleted == 1) {
+        setScores(SAGAME.currentGameName, { points : SAGAME.currentPoints ,
+                                            maxPoints : SAGAME.currentMaxPoints,
+                                            completed : SAGAME.currentGameCompleted } );
+                                        }
     // showScores(SAGAME.currentGameName);
 }
 
@@ -1728,19 +1729,7 @@ function setScores(gameName, scores) {
 
 
 
-function showScores(gameName) {
-    /**
-        Update the scores display (using the game name and element id)
-    */
-    var scores = getScores(gameName);
-    var txt = "";
-    if (scores == null) {
-        txt = 'Ei pelattu vielä';
-    } else {
-        txt = scores.points + "/" + scores.maxPoints;
-    }
-    $("#scores_"+ gameName).html(txt);
-}
+
 
 
 function updatePoints(pointGain) {
