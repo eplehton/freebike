@@ -172,6 +172,8 @@ var SAGAME = {};
 SAGAME.sagameStyle = 'yesno';
 SAGAME.fastResponseLimit = 999;
 SAGAME.showMarkers = 1;
+SAGAME.showClipId = 1;
+SAGAME.showExitGameButton = 0;
 SAGAME.calibInterval = 16;
 SAGAME.clipIdLength = 3; // hom many characters from the beginning will be shown as clip id
 SAGAME.CLIPSETS = null;
@@ -247,6 +249,9 @@ function annoTargets2TestQuery(clipname, all_targets) {
 
 
 function clearQueries() {
+    /* 
+        This function clears the response elements from the screen.
+    */
 	var parent = document.getElementById("screen");
 	var query_boxes = parent.getElementsByClassName("query_box");
 	
@@ -577,13 +582,16 @@ function checkAnswersSelectOne() {
             qbox.style.borderWidth = "3px";
             
             if (SAGAME.feedback == 'description') {
+                var txt = "";
                 if (answerObj.answer_latency < SAGAME.fastResponseLimit) {
+                    txt += "Nopeasta mutta väärästä vastuksesta menetit kaksi pistettä!";
                     pointGain += -2;
                 } else {
+                    txt += "Menetit pisteen!";
                     pointGain += -1;
                 }
-
-                var txt = "Menetit pisteen!<br />" + qitem.description;
+                txt += "<br />" + qitem.description;
+                
                 $("#"+ query_feedback_id).html(txt);
                 $("#"+ query_feedback_id).show(); 
                 
@@ -598,14 +606,17 @@ function checkAnswersSelectOne() {
             qbox.style.borderWidth = "3px";
             
             if (SAGAME.feedback == 'description') {
+                var txt = "";
                 if (answerObj.answer_latency < SAGAME.fastResponseLimit) {
+                    txt += "Hyvin havaittu! Nopeasta vastauksesta kaksi pistettä.";
                     pointGain += 2;
                 } else {
+                    txt += "Hyvin havaittu! Sait pisteen.";
                     pointGain += 1;
                 }
- 
-                var txt = "Hyvin havaittu! Sait pisteen. <br />"+ qitem.description;
-         
+                
+                txt += "<br />"+ qitem.description;
+
                 $("#"+ query_feedback_id).html(txt);
                 $("#"+ query_feedback_id).show(); 
    
@@ -687,7 +698,7 @@ function downloadDexieTable(tableName) {
 }
 
 
-// Server communication functions 
+//////////// Server communication functions, start
 
 function logToServer(player_id) {
     /**
@@ -713,6 +724,9 @@ function logToServer(player_id) {
 }
 
 function getScoresFromServer(player_id) {
+    /*
+        Retrieve player's scores from the server and store them to localStorage.
+    */
     console.log("player_id: "+ player_id);
     
     var json_file = 'scoresdata/scores_'+ player_id +'.json';
@@ -720,8 +734,7 @@ function getScoresFromServer(player_id) {
     
     $.ajaxSetup({ cache: false }); // this is important!
     var req = $.getJSON(json_file, function(scoresJSON) {
-        console.log("We got scores");
-        
+
         console.log(scoresJSON);
         localStorage.setItem("Freebike.SAGame.scores", JSON.stringify(scoresJSON));    
     
@@ -736,43 +749,17 @@ function getScoresFromServer(player_id) {
     return req;
 }
 
-
-function saveScoresToServer(scoresJSON) {
-    /**
-     * This function take the scores json and send it to the server for storage. 
-     */
-    console.log(SAGAME.SAVESCORESURL)
-
-    console.log(scoresJSON)
-    
-    
-    if (SAGAME.SAVESCORESURL) {
-        postJSONtoServer(scoresJSON, SAGAME.SAVESCORESURL);
-    }
-}
+//////////// Server communication functions, start
 
 
 
 
-function getScores(gameName) {
-    var scoresStr = localStorage.getItem("Freebike.SAGame.scores");
-    console.log(scoresStr);
-    var scores = JSON.parse(scoresStr);
-    
-    if (scores.hasOwnProperty(gameName)) {
-        return scores[gameName];
-    } else {
-        return null;
-    }
-}
 
 
-
-/**
- * Load clipsets from json file.
- */
 function loadClipsetsFrom(json_file) { 
-    
+    /**
+     * Load clipsets from json file.
+     */    
     var req = $.getJSON(json_file, function(data) {
         SAGAME.CLIPSETS = data.CLIPSETS;
         SAGAME.CLIPPATH = data.CLIPPATH;
@@ -785,10 +772,11 @@ function loadClipsetsFrom(json_file) {
     return req;
 }
 
-/**
- * Load target annotation from json file.
- */
+
 function loadTargetsFrom(json_file) { 
+    /**
+     * Load target annotations from json file.
+     */
     var req = $.getJSON(json_file, function(data) {
         SAGAME.TARGETS = data;
     }).fail(function(err) {
@@ -802,12 +790,11 @@ function loadTargetsFrom(json_file) {
 
 
 function loadQueries(videoset) {
+    /*
+        Parse targets descriptions and convert them as "queries".
+    */
 	var all_targets = SAGAME.TARGETS;
 	
-	//var testset_num = sessionStorage.getItem("testset_num");
-	//if (testset_num == null) { // this was 'null' : bug!
-	//	testset_num = 0;
-    //}	
     
     var cliplist = videoset;
     console.log("cliplist");
@@ -821,7 +808,7 @@ function loadQueries(videoset) {
             var query = annoTargets2TestQuery(clipname, all_targets);
             test_queries.push(query);
         } catch (e) {
-            alert("Hups! Ongelmia kohteiden kanssa videossa: "+ clipname); 
+            alert("Hups! Ongelmia pelidatan latauksessa kanssa videossa: "+ clipname); 
         }
 	}
 	return test_queries;
@@ -906,13 +893,11 @@ function registerPresence(query, query_id, box_id, answer, query_started_realt) 
 
 
 
-//var RAI_qi = null;
-
 
 function createQueryLocation(locData, query_id, box_id) {
-    
-    // The stuff below is related to showing the circle and positioning it
-    
+    /* 
+       Creates elements to show answer locations (the circles) and positions the elements. 
+    */
   	var queryBoxTmpl = document.getElementById("query_box_template");
 	var queryFeedbackTmpl = document.getElementById("query_feedback_template");
     var screen = document.getElementById("screen");
@@ -967,7 +952,7 @@ function createQueryLocation(locData, query_id, box_id) {
 
 function showQuery(query) {
     /**
-        This functions shows the query / question for the player.
+        This functions shows one query (=locations when the video is stopped) to the player.
     */
 	console.log("showQuery called with:");
     console.log(query);
@@ -977,7 +962,6 @@ function showQuery(query) {
     
     // Setup of variables 
     var query_items = query.items;
-	//RAI_qi = query_items;
 	
 	var vplayer = document.getElementById("videoplayer");
 	var nbutton = document.getElementById("nextbutton");
@@ -1070,23 +1054,27 @@ function showQuery(query) {
             $("#checkbutton").show();
 
         } else if (SAGAME.sagameStyle == 'selectone') { // selectone
-        
+            
             // Here we setup the callbacks
             function makeCallbackTB(qi, q_id, b_id) {
-                return function() { var status = toggleQueryBox(q_id, b_id); 
+                return function() { 
+                                    var status = toggleQueryBox(q_id, b_id); 
                                     // the first hit is the answer, so we proceed immediately to the checkAnswers
                                     
                                     // we record this for completeness: it will be easier to calculate "pondering time"
                                     var query = SAGAME.currentQueries[SAGAME.query_id];
                                     var ev = new ExpEvent(query.clip, 'answerGiven', -1); 
                                     ev.save();
-                                
+                                    
                                     checkAnswers();
-                    
+                                    
                                 }
                             }
-                        
-            qbox.addEventListener("click", makeCallbackTB(locationData, query_id, box_id), false);
+            
+            var query_box_id = "#query_box_" + query_id + '_' + box_id;
+            $(query_box_id).one("click", makeCallbackTB(locationData, query_id, box_id));
+                            
+            // qbox.addEventListener("click", makeCallbackTB(locationData, query_id, box_id), false);
             
             /* // to visualize fast response limit
             var query_box_id = "query_box_" + query_id + '_' + box_id;
@@ -1128,9 +1116,11 @@ function showQuery(query) {
 }
 
 function showVideoMask() {
+    /*
+        Video mask hides the video still image while a query is presented. 
+    */
     $("#videoMask").show();
-    
-    
+
     var tl = videoToClient($(videoplayer)[0], 0, 0);
     var tr = videoToClient($(videoplayer)[0], 1, 0);
     var bl = videoToClient($(videoplayer)[0], 0, 1);
@@ -1158,10 +1148,14 @@ function playVideo() {
         $("#nextbutton").hide();
         $("#videoplayer").hide();
         
+        $("#currentvideo")[0].style.display = 'block';
         
         // for some reason IE11 does not show them with jqeury show()
         $("#points")[0].style.display = 'block'; 
-        $("#exitGameButton")[0].style.display = 'block'; 
+  
+        if (SAGAME.showExitGameButton) {
+            $("#exitGameButton")[0].style.display = 'block'; 
+        }
         
         // showVideoMask(); // this does not only show it but positions it
         
@@ -1262,7 +1256,11 @@ function playVideo() {
     
         
         // show the information
-        $("#currentvideo").html( '('+ (SAGAME.query_id+1) +'/'+ SAGAME.currentClipset.length +') ' + query.clip.substring(0, SAGAME.clipIdLength) );
+        var txt = '('+ (SAGAME.query_id+1) +'/'+ SAGAME.currentClipset.length +')';
+        if (SAGAME.showClipId) {
+            txt += ' '+ query.clip.substring(0, SAGAME.clipIdLength) ;
+        }
+        $("#currentvideo").html(txt);
 
         // start playing
         $("#videoplayer")[0].play();
@@ -1345,12 +1343,14 @@ function playVideo() {
 
 function finishVideo() {
 /**
- * This functions cleans up everything if video is stopped abruptly and when it ends normally. 
+ * This functions cleans up everything if video is stopped abruptly and also when it ends normally. 
  */
     // $("#points").hide();
     // $("#exitGameButton").hide();
     
     // IE11 does not work with Jquery show/hide for some reason
+    $("#currentvideo")[0].style.display = 'none';
+    
     $("#points")[0].style.display = 'none'; 
     $("#exitGameButton")[0].style.display = 'none'; 
     
@@ -1426,6 +1426,68 @@ function setQueryBoxStatus(qbox, status) {
 }
 
 
+////////////////////////// Points functions, start
+
+function getScores(gameName) {
+    var scoresStr = localStorage.getItem("Freebike.SAGame.scores");
+    console.log(scoresStr);
+    var scores = JSON.parse(scoresStr);
+    
+    if (scores.hasOwnProperty(gameName)) {
+        return scores[gameName];
+    } else {
+        return null;
+    }
+}
+
+
+function setScores(gameName, scores) { 
+    var allScoresStr = localStorage.getItem("Freebike.SAGame.scores");
+    var allScores = JSON.parse(allScoresStr);
+    
+    allScores[gameName] = scores;
+    
+    var scoresJSON = JSON.stringify(allScores);
+    localStorage.setItem("Freebike.SAGame.scores", scoresJSON);    
+    
+    saveScoresToServer(scoresJSON);
+}
+
+function saveScoresToServer(scoresJSON) {
+    /*
+     * This function take the scores json and send it to the server for storage. 
+     */
+    
+    if (SAGAME.SAVESCORESURL) {
+        postJSONtoServer(scoresJSON, SAGAME.SAVESCORESURL);
+    }
+}
+
+
+function updatePoints(pointGain) {
+    /*
+        Update points after each response. 
+    */
+    if (pointGain != 0) {        
+        if (pointGain > 0) {
+            $("#points").html('+' + pointGain); 
+            $("#points").effect( {effect : "scale", percent : 125 } ).effect( {effect : "scale", percent : 80 } );
+        } else {
+            $("#points").html('' + pointGain); 
+            $("#points").effect( "shake" );
+        }
+        setTimeout(function() { $("#points").html('' + SAGAME.currentPoints); }, 4000);
+    } else {
+        $("#points").html('' + SAGAME.currentPoints); 
+    }
+}
+
+/////////// Points functions, end
+
+
+
+
+///// Events for interaction
 
 
 function setupInteraction() {
@@ -1488,47 +1550,7 @@ function setupInteraction() {
         }
     });
         
-    
-    /*
-    $("#startPractice").click(function() {  // consider modifying this so that practise is just one game set?
-        $("#practiceInstructions").hide();
-        
-        SAGAME.currentClipset = SAGAME.CLIPSETS.practice; // should this be configurable?
-        SAGAME.currentGameName = 'Harjoittelu';
-        SAGAME.currentPoints = 0;
-        SAGAME.currentMaxPoints = 0;
-        
-        var practiceSet = SAGAME.currentClipset;
-        
-        
-        SAGAME.query_id = 0;
-        playVideo(SAGAME.query_id, practiceSet)
-    
-        $("#nextbutton").off("click");
-        $("#nextbutton").click(function() {
-        
-            SAGAME.query_id += 1;
-            if (SAGAME.query_id < practiceSet.length) {
-                playVideo(SAGAME.query_id, practiceSet);
-            } else {
 
-                setScores(SAGAME.currentGameName, { points : SAGAME.currentPoints ,
-                                                   maxPoints : SAGAME.currentMaxPoints } );
-                
-                showScores(SAGAME.currentGameName);                 
-                $("#home").show();
-                // $("#gameInstructions").show();
-            }
-            //SAGAME.query_id += 1;
-            //if (SAGAME.query_id < practiceSet.length) {
-            //    startGame(SAGAME.query_id, practiceSet);
-            //} else {
-            //    $("#gameInstructions").show();
-            //}
-        })
-        
-    })
-    */
 
     $("#showPracticeInstructions").click(function() {
         console.log("showPracticeInstructions");
@@ -1602,8 +1624,10 @@ function setupInteraction() {
                 SAGAME.currentGameCompleted = 1;
                 finishGame();
                 
-                $("#endInstructions").show();                                   
-                
+
+                $("#endInstructions").show();                             
+                // try to show points
+                $("#scoresAfterDisplay").html( SAGAME.currentPoints +"/"+ SAGAME.currentMaxPoints );
             }
         }
         
@@ -1714,42 +1738,3 @@ function setupInteraction() {
 }
 	
 
-
-function setScores(gameName, scores) { 
-    var allScoresStr = localStorage.getItem("Freebike.SAGame.scores");
-    var allScores = JSON.parse(allScoresStr);
-    
-    allScores[gameName] = scores;
-    
-    var scoresJSON = JSON.stringify(allScores);
-    localStorage.setItem("Freebike.SAGame.scores", scoresJSON);    
-    
-    saveScoresToServer(scoresJSON);
-}
-
-
-
-
-
-
-function updatePoints(pointGain) {
-    
-    if (pointGain != 0) {
-        
-        if (pointGain > 0) {
-            $("#points").html('+' + pointGain); 
-            $("#points").effect( {effect : "scale", percent : 125 } ).effect( {effect : "scale", percent : 80 } );
-        } else {
-            $("#points").html('' + pointGain); 
-            $("#points").effect( "shake" );
-        }
-        
-
-        
-        setTimeout(function() { $("#points").html('' + SAGAME.currentPoints); }, 2000);
-    
-    } else {
-        $("#points").html('' + SAGAME.currentPoints); 
-    }
-
-}
