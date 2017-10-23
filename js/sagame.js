@@ -584,7 +584,7 @@ function checkAnswersSelectOne() {
             if (SAGAME.feedback == 'description') {
                 var txt = "";
                 if (answerObj.answer_latency < SAGAME.fastResponseLimit) {
-                    txt += "Nopeasta mutta väärästä vastuksesta menetit kaksi pistettä!";
+                    txt += "Nopeasta mutta väärästä vastauksesta menetit kaksi pistettä!";
                     pointGain += -2;
                 } else {
                     txt += "Menetit pisteen!";
