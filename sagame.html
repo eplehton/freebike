@@ -31,6 +31,8 @@
         var clipsets_json = 'js/sagame_clipsets_rsos2016.json';
         var targets_json = 'js/sagame_targets_rsos2016.json';        
         
+        SAGAME.videoFolder = "videos";
+        
         var search = window.location.search;
         if (search[0] == '?') { search = search.slice(1); } // Firefox can't handle leading ? 
         const params = new URLSearchParams(search);

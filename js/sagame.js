@@ -1470,13 +1470,13 @@ function updatePoints(pointGain) {
     */
     if (pointGain != 0) {        
         if (pointGain > 0) {
-            $("#points").html('+' + pointGain); 
-            $("#points").effect( {effect : "scale", percent : 125 } ).effect( {effect : "scale", percent : 80 } );
+            $("#points").html('+' + pointGain);     
+            $("#points").effect( {effect : "scale", percent : 125 } ).effect( {effect : "scale", percent : 80 }, 2000);
         } else {
             $("#points").html('' + pointGain); 
-            $("#points").effect( "shake" );
+            $("#points").effect( "shake", {times: 5}, 1500);
         }
-        setTimeout(function() { $("#points").html('' + SAGAME.currentPoints); }, 4000);
+        setTimeout(function() { $("#points").html('' + SAGAME.currentPoints); }, 5000);
     } else {
         $("#points").html('' + SAGAME.currentPoints); 
     }
