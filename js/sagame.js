@@ -170,6 +170,7 @@ VideoBuffer.prototype.getVideo(id) {
 var SAGAME = {};
 // defaults, can be overriden in the html
 SAGAME.sagameStyle = 'yesno';
+SAGAME.enableKeys = 1;
 SAGAME.fastResponseLimit = 999;
 SAGAME.showMarkers = 1;
 SAGAME.showClipId = 1;
@@ -729,7 +730,7 @@ function getScoresFromServer(player_id) {
     */
     console.log("player_id: "+ player_id);
     
-    var json_file = 'scoresdata/scores_'+ player_id +'.json';
+    var json_file = SAGAME.scoresFolder + '/scores_'+ player_id +'.json';
     console.log(json_file);
     
     $.ajaxSetup({ cache: false }); // this is important!
@@ -1511,6 +1512,8 @@ function setupInteraction() {
 
     
     function login(playerID) {
+        playerID = playerID.toUpperCase()
+        
         if (SAGAME.checkPlayerID) {
             console.log(playerID);
             console.log(SAGAME.validPlayerIDs);
@@ -1674,53 +1677,48 @@ function setupInteraction() {
     
 	 // Keypresses
 	$(document).keypress(function(event){
-		switch (event.which) {
-			case "a".charCodeAt(0):
+        
+        if (SAGAME.enableKeys) {
+            switch (event.which) {
+                case "a".charCodeAt(0):
 
-                if ((SAGAME.query_id+1) < SAGAME.currentClipset.length) {            
+                    if ((SAGAME.query_id+1) < SAGAME.currentClipset.length) {            
+                        finishVideo();
+                        
+                        SAGAME.query_id += 1;
+                        playVideo();
+                    }
+                    break;
+                    
+                case "z".charCodeAt(0):
+                    if ((SAGAME.query_id-1) < SAGAME.currentClipset.length) {                            
+                        finishVideo();
+                        
+                        SAGAME.query_id -= 1;;
+                        playVideo();
+                    }
+                    break;
+                
+                case "r".charCodeAt(0): // replay
                     finishVideo();
                     
-                    SAGAME.query_id += 1;
                     playVideo();
-                    //playVideo(SAGAME.query_id, SAGAME.currentClipset);
-                }
-				break;
-                
-			case "z".charCodeAt(0):
-                if ((SAGAME.query_id-1) < SAGAME.currentClipset.length) {                            
-                    finishVideo();
+                    break;
                     
-                    SAGAME.query_id -= 1;;
-                    playVideo();
-                    //playVideo(SAGAME.query_id, SAGAME.currentClipset);
-                }
-				break;
-            
-            case "r".charCodeAt(0): // replay
-                finishVideo();
-                
-                playVideo();
-                //playVideo(SAGAME.query_id, SAGAME.currentClipset);
-                break;
-                
-			case 'c'.charCodeAt(0):
-				var mask = $("#videoMask")[0];
-				
-				if (mask.style.display == "block") {	
-					mask.style.display = 'none';
-				} else {
-					mask.style.display = 'block';
-				}
-				break;
-            case "1".charCodeAt(0):
-                logToServer(sessionStorage.getItem("Freebike.SAGame.player_id"));
-
-                
-                //playVideo(SAGAME.query_id, SAGAME.currentClipset);
-                break;
-            
-    
-		}
+                case 'c'.charCodeAt(0):
+                    var mask = $("#videoMask")[0];
+                    
+                    if (mask.style.display == "block") {	
+                        mask.style.display = 'none';
+                    } else {
+                        mask.style.display = 'block';
+                    }
+                    break;
+                case "1".charCodeAt(0):
+                    logToServer(sessionStorage.getItem("Freebike.SAGame.player_id"));
+                    break;
+            }
+        }
 	});
 	
     $("#downloadanswers").click( function() {
