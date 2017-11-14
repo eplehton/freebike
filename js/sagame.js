@@ -13,7 +13,6 @@ db.version(5).stores({ // in order to prevent errors
 
 
 //~ db.version(7).stores({
-    
     //~ answers: "++id, player_id, session_id, src, src_stop_time, query_id, box_id, query_started_realt, answer_latency, answer, target_id, target_type, target_x, target_y", 
     //~ markers: "++id,real_t,marker_id,top,left,width,height,video_left, video_right, video_top, video_bottom,[real_t+marker_id]",
     //~ expevents: "++id,player_id,session_id,src,event,t,real_t,[player_id+src]"
@@ -114,7 +113,6 @@ VideoBuffer.prototype.waitVideo = function(src, callback) {
 
 VideoBuffer.prototype.buffer = function(src) {
     var self = this;
-    
     var req = new XMLHttpRequest();
     req.open('GET', src, true);
     req.responseType = 'blob';
@@ -191,7 +189,9 @@ SAGAME.currentMaxPoints = 0;
 SAGAME.currentGameCompleted = 0;
 SAGAME.currentQueries = null; // to hold query data
 SAGAME.showQueryTimeout = null; // global timeout to for query firing 
-    
+
+SAGAME.answerGiven = false; // helper variable to prevent gaining point from multiple click (event handler removing does not work)
+
 var test_queries; // to hold query data
 
 var query_box_present_color = 'yellow';
@@ -547,8 +547,8 @@ function checkAnswersSelectOne() {
         Check answers and show feedback when you have to select one. 
         Currently this is exactly lie yes-no, but this may change. 
     */
-    var query_id = SAGAME.query_id;
     
+    var query_id = SAGAME.query_id;
     var query = SAGAME.currentQueries[query_id];
 
     
@@ -1055,33 +1055,30 @@ function showQuery(query) {
             $("#checkbutton").show();
 
         } else if (SAGAME.sagameStyle == 'selectone') { // selectone
+            SAGAME.answerGiven = false; // this global helper variable is used by the callback below, so make sure it is false as it should
             
             // Here we setup the callbacks
             function makeCallbackTB(qi, q_id, b_id) {
                 return function() { 
-                                    var status = toggleQueryBox(q_id, b_id); 
+                                    
                                     // the first hit is the answer, so we proceed immediately to the checkAnswers
-                                    
-                                    // we record this for completeness: it will be easier to calculate "pondering time"
-                                    var query = SAGAME.currentQueries[SAGAME.query_id];
-                                    var ev = new ExpEvent(query.clip, 'answerGiven', -1); 
-                                    ev.save();
-                                    
-                                    checkAnswers();
-                                    
+                                    if (! SAGAME.answerGiven) { // prevent double answers 
+                                        var status = toggleQueryBox(q_id, b_id); 
+                                        SAGAME.answerGiven = true;
+
+                                        // we record this for completeness: it will be easier to calculate "pondering time"
+                                        var query = SAGAME.currentQueries[SAGAME.query_id];
+                                        var ev = new ExpEvent(query.clip, 'answerGiven', -1); 
+                                        ev.save();
+                                        
+                                        checkAnswers();
+                                    }
                                 }
                             }
             
             var query_box_id = "#query_box_" + query_id + '_' + box_id;
             $(query_box_id).one("click", makeCallbackTB(locationData, query_id, box_id));
-                            
-            // qbox.addEventListener("click", makeCallbackTB(locationData, query_id, box_id), false);
             
-            /* // to visualize fast response limit
-            var query_box_id = "query_box_" + query_id + '_' + box_id;
-            $(query_box_id).hide();                           
-            $(query_box_id).fadeIn(SAGAME.fastResponseLimit);
-            */
 
                         
         } else { // yesno
